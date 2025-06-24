@@ -1,0 +1,5 @@
+Stage,      Time(s),    Type
+pH,         10,        Conditioning
+Collector,  10,        Conditioning
+C1,         20,        Flotation
+C2,         20,        Flotation

@@ -1,0 +1,3 @@
+recursive-include src *.wav
+recursive-include src *.csv
+recursive-include src *.mp3

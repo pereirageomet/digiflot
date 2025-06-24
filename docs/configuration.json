@@ -1,0 +1,52 @@
+{
+    "RaspiCamModel": {
+        "camera trademark": "Raspberry Pi",
+        "image interval": 0.01,
+        "exposure time": 20,
+        "gain": 20.0,
+        "normalize image": false,
+        "output raw image": true,
+        "image format": "png",
+        "brightness": 0.0,
+        "contrast": 1.0,
+        "saturation": 1.0,
+        "sharpness": 1.0
+    },
+    "DahengCamModel": {
+        "camera trademark": "Daheng",
+        "image interval": 1.0,
+        "exposure time": 200,
+        "gain": 1.0,
+        "normalize image": false,
+        "output raw image": true,
+        "image format": "png"
+    },
+    "DataForwarder": {
+        "broker": "149.220.213.15",
+        "port": 1883,
+        "topic_sub": "fwgserv02a/spark/timerEvent",
+        "topic_pub": "lab323/raspi1/digifloat/dataForwarder",
+        "username": "dev8",
+        "password": "dev8"
+    },
+    "TabViewInformation": {
+        "broker": "149.220.213.15",
+        "port": 1883,
+        "topic_sub": "fwgserv02a/spark/timerEvent",
+        "topic_pub": "lab323/raspi1/digifloat/tabViewInformation",
+        "username": "dev8",
+        "password": "dev8"
+    },
+    "Controller": {
+        "measurement timer": 1000,
+        "run tab timer": 100,
+        "camera tab timer": 30,
+        "lidar tab timer": 30,
+        "flow control tab timer": 30
+    },
+    "MainWindow": {
+        "software": "DigiFloat Lab Assistant",
+        "project": "default",
+        "camera model class": "RaspiCamModel"
+    }
+}

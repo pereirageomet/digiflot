@@ -1,0 +1,55 @@
+Metadata-Version: 2.4
+Name: digiflot
+Version: 1.0.2
+Summary: A digital and modular platform to assist on laboratory flotation experiments and collect relevant information.
+Author-email: Lucas Pereira <l.pereira@hzdr.de>, Christian Schmidt <christian.schmidt@hzdr.de>
+Project-URL: Homepage, https://codebase.helmholtz.cloud/pereir41/digifloat
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU GENERAL PUBLIC LICENSE v3.0
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: PyQt5
+Requires-Dist: opencv-python-headless
+Requires-Dist: pandas
+Requires-Dist: picamera2
+Requires-Dist: numpy
+Requires-Dist: python-vlc
+Requires-Dist: pyzmq
+Requires-Dist: paho-mqtt==1.6.1
+Requires-Dist: psutil
+Requires-Dist: bronkhorst-propar
+Requires-Dist: minimalmodbus
+Requires-Dist: kafka-python-ng
+Requires-Dist: iai-gxipy
+Dynamic: license-file
+
+# DigiFlot
+
+A digital and modular platform to assist on laboratory flotation experiments and collect relevant information from different sensors in a structured manner.
+
+# Installation
+
+1. Clone the repository
+2. Install dependencies
+```python
+sudo apt install -y python3-full python3-pip libcap-dev vlc python3-build python3-picamera2 python3-pyqt5
+pip install build
+``` 
+
+4. from the root directory of digiflot, build the package and install it
+Here, the use of sudo assures its availability for all users. You could consider creating a virtual environment that is shared accross users. By using sudo, you might receive an error message concerning the danger of modifying the overall python installation. The error message contains the necessary information about how to take the risk and install the package for all users.
+```python
+python -m build
+sudo python -m pip install .
+``` 
+
+6.  Finally, call digiflot with 
+```python
+python -m digiflot.DigiFlot
+``` 
+
+# Wiki
+
+For further information take a look at the ![wiki](docs/welcome.md).

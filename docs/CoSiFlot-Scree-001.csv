@@ -1,0 +1,5 @@
+Air flow rate,  Rotor speed,    Target pH,  Reagent,        Concentration,  Volume, Stage
+0,              0,              7,          HCl,            1 %vol.,        1 mL,   pH
+0,              0,              7,          Sodium Oleate,  1 %vol.,        1 mL,   Collector
+100,            4,              7,          ,               ,               ,       C1
+100,            4,              7,          ,               ,               ,       C2
