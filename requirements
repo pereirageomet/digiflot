@@ -1,0 +1,13 @@
+PyQt5
+opencv-python-headless
+pandas
+picamera2
+numpy
+python-vlc
+pyzmq
+paho-mqtt==1.6.1
+psutil
+bronkhorst-propar
+minimalmodbus
+kafka-python-ng
+iai-gxipy
