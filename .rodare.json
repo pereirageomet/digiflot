@@ -1,24 +1,29 @@
 {
-    "creators": [
+	"creators": [
+		{
+			"name": "Pereira, Lucas",
+			"affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, Helmholtz Institute Freiberg for Resource Technology",
+			"orcid": "0000-0001-8041-5406"
+		},
+		{
+			"name": "Schmidt, Christian",
+			"affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, Helmholtz Institute Freiberg for Resource Technology"
+		},
+		{
+			"name": "Rudolph, Martin",
+			"affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, Helmholtz Institute Freiberg for Resource Technology",
+			"orcid": "0000-0002-5374-6135"
+		}
+	],
+	"title": "DigiFlot: a modular laboratory assistant tailored for froth flotation experiments",
+	"access_right": "open",
+	"upload_type": "software",
+	"license": "GPL-3.0",
+	"pub_id": "41542",
+	"description": "A modular laboratory assistant tailored for froth flotation experiments",
+	"communities": [
         {
-            "name": "Pereira, Lucas",
-            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, Helmholtz Institute Freiberg for Resource Technology",
-            "orcid": "0000-0001-8041-5406"
-        },
-		{
-            "name": "Schmidt, Christian",
-            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, Helmholtz Institute Freiberg for Resource Technology"
-        },
-		{
-            "name": "Rudolph, Martin",
-            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, Helmholtz Institute Freiberg for Resource Technology",
-            "orcid": "0000-0002-5374-6135"
+            "identifier": "fwg"
         }
-    ],
-    "title": "DigiFlot: a modular laboratory assistant tailored for froth flotation experiments",
-    "access_right": "open",
-    "upload_type": "software",
-    "license": "GPL-3.0",
-    "pub_id": "41542",
-    "description": "Laboratory flotation experiments make a big part of the research work in the field of particle separation, having clear objective both in academia and in industry. As any laboratory experiment, reproducibility must be guaranteed in flotation experiments. Yet, given the many simultaneous tasks to be performed in an experiment, reproducibility in not always guaranteed in a flotation test. Besides, flotation is a process characterized by many sub processes, controlled by a wide range of physical and chemical parameters. While sensors exist to measure such parameters, data is only sparsely stored and no formal data structure currently exists. DigiFlot contribute to both of these challenges. The modular laboratory assistant offers guidance to users, clearly indicating the actions to be taken and using audible cues to call for attention at specific times. Its modular framework enables the automation of repetitive tasks such as switching airflow on and off at specific times. It systematically stores the data collected from all of its sensors to enable a detailed understanding of the results of each experiment. The key features are: * a user-friendly graphical interface * providing a standard for preplanning the execution of the experiments * real-time tracking of data, i.e. probe data (pH, conductivity, ...), images, and from other devices (e.g. LIDAR, Air Flow) * control of measurement specific parameters (e.g. air flow) * holistic configurability: be it the number of stages, the content of each experimental stage, or the parameters of the devices - everything is configurable! * incorporation of support features, such as sensor calibration, direct device interfaces, or interfaces to other external services * offline and online data storage capabilites The lab assistant follows architectural patterns and implements both a Model-View-Controller architecture and event-driven architecture."
+    ]
 }
