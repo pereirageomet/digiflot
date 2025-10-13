@@ -16,7 +16,7 @@ The key features are:
 - offline and online data storage capabilites  
   
 **Software Architecture of the Lab Assistant**  
-The lab assistant follows architectural patterns and implements both an [Model-View-Controller architecture](docs/static.md) and [event-driven architecture](docs/dynamic.md).
+The lab assistant follows architectural patterns and implements both an [Model-View-Controller architecture](static.md) and [event-driven architecture](dynamic.md).
 
 **User guide**
-To get to the user guide, [click here](docs/user_guide.md).  
+To get to the user guide, [click here](user_guide.md).  

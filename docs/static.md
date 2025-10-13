@@ -7,4 +7,4 @@ To avoid spaghettification and enforce clarity of the code, the definitions of t
 As a visualization of the software architecture and its class hierarchy the classes and some of the classless modules are presented in the following UML class diagram.
 
 **UML class diagram**
-![classes](docs/classes.png)
+![classes](classes.png)

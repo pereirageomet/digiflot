@@ -6,7 +6,7 @@ The setup tab allows for initializing a specific experimental run with the sampl
 
 **Visual Overview**
 
-![setup](docs/setup.png)
+![setup](setup.png)
 
 **Work Flow**
 

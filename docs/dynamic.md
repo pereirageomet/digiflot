@@ -23,4 +23,4 @@ Every event of category (2) or (4) is registered beforehand by help of the event
 
 **UML diagram**  
 All events occuring in the Lab Assistant software are visualized in the following UML:
-![events](docs/events.png)
+![events](events.png)

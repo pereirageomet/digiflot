@@ -11,7 +11,7 @@ Here’s how to get started with installing **DigiFlot Lab Assistant** on your d
 
 - **Clone the up-to-date repository**  
   - cd to a directory of your choice, e.g. mkdir ~/repo && cd repo
-  - clone the repository: git clone https://codebase.helmholtz.cloud/pereir41/digifloat.git
+  - clone the repository: git clone https://github.com/pereirageomet/digiflot.git
 
 - **Install Dependencies**  
 1. `sudo apt install -y python3-picamera2`
@@ -28,6 +28,6 @@ run `python -m pip install build` from the root directory of the repository
 install the build with `python -m pip install .`
 
 - **Verify Installation**  
-  - Open the software to confirm it launches properly by calling `python -m digifloat.DigiFloat`.
+  - Open the software to confirm it launches properly by calling `python -m digiflot.DigiFlot`.
 
 These steps will guide you through a seamless installation process!

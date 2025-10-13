@@ -5,8 +5,7 @@
 - Update the system install dependencies
 
 ```bash
-sudo apt update
-sudo apt upgrade
+sudo apt update && apt upgrade -y
 sudo apt install -y python3-full python3-pip libcap-dev vlc python3-build python3-picamera2 python3-pyqt5 xterm timeshift
 ```
 
@@ -31,8 +30,8 @@ raspi-config
 
 ```bash
 cd Documents
-git clone https://codebase.helmholtz.cloud/pereir41/digifloat.git
-cd digifloat
+git clone https://github.com/pereirageomet/digiflot.git
+cd digiflot
 python -m build --wheel
 sudo pip install --break-system-packages dist/*.whl
 ```

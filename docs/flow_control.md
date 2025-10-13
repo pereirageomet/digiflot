@@ -4,7 +4,7 @@
 The tab is an interface to the Bronkhorst Mass Flow Controller.
 
 **Visual Overview**  
-![bronkhorst](docs/bronkhorst.png)
+![bronkhorst](bronkhorst.png)
 
 **Work Flow**  
 1. Set some target value for the air flow between 0 and 10 l/min by entering it into the line edit field right beside the "Target:" label. 
