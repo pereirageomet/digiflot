@@ -21,7 +21,7 @@ Please keep in mind that **we have no affiliation with the vendors suggested in 
 All pieces indicated there are alredy integrated in the DigiFlot system.
 
 # Acknowldgements
-This laboratory assistant has, so far, been developed at the [Helmholtz Institute Freiberg for Resource Technology](https://hzdr.de/hif), in Germany. 
+This laboratory assistant has, so far, been programmed at the [Helmholtz Institute Freiberg for Resource Technology](https://hzdr.de/hif), by Lucas Pereira & Christian Schmidt. 
 
 The developers are extremely grateful to all test users who battled through the bugs of the preliminary versions, also providing much valuable feedback. To name a few: Borhane Ben Said, Ali Hassan, Gülce Öktem, Aliza Salces, and Klaus Sygusch.
 
