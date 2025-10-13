@@ -2,6 +2,8 @@
 
 A digital and modular platform to assist on laboratory flotation experiments and collect relevant information from different sensors in a structured manner.
 
+<image src="https://github.com/pereirageomet/digiflot/blob/main/docs/run.png" width="450"/> <image src="https://github.com/pereirageomet/digiflot/blob/main/docs/demo.gif" width="300"/>
+
 # Wiki, including an installation guide
 
 ![wiki](docs/welcome.md).
@@ -10,7 +12,8 @@ A digital and modular platform to assist on laboratory flotation experiments and
 
 ```python
 python -m digiflot.DigiFlot
-``` 
+```
+
 # Acknowldgements
 This laboratory assistant has, so far, been developed at the [Helmholtz Institute Freiberg for Resource Technology](https://hzdr.de/hif), in Germany. 
 
