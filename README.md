@@ -14,6 +14,12 @@ A digital and modular platform to assist on laboratory flotation experiments and
 python -m digiflot.DigiFlot
 ```
 
+# Necessary parts
+[Here you find a list with the pieces you need or might want to have for your system.](docs/DigiFlot-pieces.csv)
+
+Please keep in mind that **we have no affiliation with the vendors suggested in there, and we do not receive any financial support from them**. Our objective with this list is to only simplify the system installation in your laboratory. 
+All pieces indicated there are alredy integrated in the DigiFlot system.
+
 # Acknowldgements
 This laboratory assistant has, so far, been developed at the [Helmholtz Institute Freiberg for Resource Technology](https://hzdr.de/hif), in Germany. 
 
