@@ -1,0 +1,23 @@
+Item,Possible supplier,Comments
+"Raspberry Pi 5, 16GB RAM",https://www.berrybase.de/raspberry-pi-5-16gb-ram,"This is a suggestion, but at a later stage we could be do image processing within the digiflot runs, thus I would buy this one"
+"Raspberry Pi Active Cooler, Lüfter für Raspberry Pi 5",https://www.berrybase.de/raspberry-pi-active-cooler-luefter-fuer-raspberry-pi-5,Only if it is a RPi 5
+SD Karte,https://www.berrybase.de/sandisk-extreme-microsdxc-a2-uhs-i-u3-v30-190mb-s-speicherkarte-adapter-128gb,Choose the storage that makese sense for you
+RTC Batterie / Akku für Raspberry Pi 5,https://www.berrybase.de/rtc-batterie-akku-fuer-raspberry-pi-5,Only if it is a RPi 5
+"Raspberry Pi 27W USB-C Power Supply, Netzteil, schwarz",https://www.berrybase.de/raspberry-pi-27w-usb-c-power-supply-netzteil-schwarz,Must be different if it is a RPi4
+"Raspberry Pi Camera Cable, Standard - Mini, 500mm",https://www.berrybase.de/raspberry-pi-camera-cable-standard-mini-500mm,Must be different if it is a RPi4
+Camera,https://www.berrybase.de/en/raspberry-pi-high-quality-camera,"There are many options in the market, choose what is best for you"
+Objective,You need to choose what makes sense for you,Light source must also be checked
+Camera adapter to send signal with HDMI,https://botland.de/ffc-bander-und-kamerataschen-fur-raspberry-pi/11691-csi-hdmi-adapter-fur-kameras-fur-raspberry-pi-5904422340292.html,"If this is used, an HDMI cable of desired length should also be purchased"
+Shield for pulp sensors,https://sensorsandprobes.com/products/i4-interlink-universal-shield,The old one we have is also OK
+EZO-pH,https://sensorsandprobes.com/products/ezo%E2%84%A2-ph-circuit,
+EZO-Temperature,https://sensorsandprobes.com/products/ezo%E2%84%A2-rtd-temperature-circuit,
+EZO-Conductivity,https://sensorsandprobes.com/products/ezo%E2%84%A2-conductivity-circuit,
+EZO-OxiRedox,https://sensorsandprobes.com/products/ezo%E2%84%A2-orp-circuit,
+pH-OxiRedox-Temp probe,https://sensorsandprobes.com/products/industrial-ph-orp-temp-probe?_pos=19&_sid=3998814c7&_ss=r,
+Conductivity probe,https://sensorsandprobes.com/products/conductivity-probe-k-1-0,
+LIDAR,https://exp-tech.de/en/products/tf02-pro-lidar-sensor,
+Monitor,https://www.reichelt.de/de/de/shop/produkt/61cm_monitor_1080p_usb_lautsprecher-398484,To check if we need a serial adapter
+Keyboard+mouse,https://www.reichelt.de/de/de/shop/produkt/tastatur-_maus-kombination_funk_schwarz-134096,
+Monitor holder,https://www.reichelt.de/de/de/shop/produkt/arctic_monitor_halter_1_display_43_-412642,
+HDMI cable,https://www.berrybase.de/offizielles-raspberry-pi-micro-hdmi-kabel-weiss-2-0m,
+Mass flow controller,https://www.bronkhorst.com/products/gas-flow/el-flow-prestige/,Check the price @ Bronkhorst. You also need a serial cable that can be connected to the raspberry pi
