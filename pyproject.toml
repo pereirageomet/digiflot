@@ -1,12 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
+
 [project]
 name = "digiflot"
-version = "1.0.3"
+dynamic = ["version"]
 authors = [
-  { name="Lucas Pereira", email="l.pereira@hzdr.de" },
-  { name="Christian Schmidt"},
+  { name = "Lucas Pereira", email = "l.pereira@hzdr.de" },
+  { name = "Christian Schmidt" }
 ]
 description = "A digital and modular platform to assist on laboratory flotation experiments and collect relevant information."
 readme = "README.md"
@@ -16,12 +17,26 @@ classifiers = [
     "License :: OSI Approved :: GNU GENERAL PUBLIC LICENSE v3.0",
     "Operating System :: OS Independent",
 ]
-dynamic = ["dependencies"]
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements"]}
 
-[tool.setuptools.packages.find]
-where= ["src"]
+dependencies = [
+  "numpy",
+  "python-vlc",
+  "pyzmq",
+  "paho-mqtt==1.6.1",
+  "psutil",
+  "bronkhorst-propar",
+  "minimalmodbus",
+  "kafka-python-ng",
+  "iai-gxipy",
+  "PyQt5",
+  "opencv-python-headless",
+  "pandas",
+  'picamera2; platform_machine == "armv7l" or platform_machine == "aarch64"'
+]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
 
 [project.urls]
-Homepage = "https://codebase.helmholtz.cloud/pereir41/digifloat"
+Homepage = "https://github.com/pereirageomet/digiflot"
