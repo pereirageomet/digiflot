@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt
 import logging
 import pathlib
 import sys
+from importlib.metadata import version, PackageNotFoundError
 
 try:
     #Run from within a package - '.' references to this package => relative import
@@ -103,8 +104,14 @@ class MainWindow(QMainWindow):
     def __init__(self, camera_connected, nodered_in_network, offline_image_storage, testrun):
         super().__init__()
         # Hide Window Close Button
-        self.setWindowFlag(Qt.WindowCloseButtonHint, windowCloseFlag)        
-        self.setWindowTitle('DigiFlot')
+        self.setWindowFlag(Qt.WindowCloseButtonHint, windowCloseFlag)
+        try:
+            ver = version("digiflot")
+        except PackageNotFoundError:
+            ver = "dev"   # fallback if running from source
+        self.setWindowTitle(f"DigiFlot v{ver}")
+        
+        #self.setWindowTitle('DigiFlot')
         self.dfont = ("Helvetica",50)
         self.openWindows = []
         self.nodered_in_network = nodered_in_network
@@ -246,3 +253,4 @@ def main(headless = False, camera_connected = True, nodered_in_network = True, o
 
 if __name__=="__main__":
     main(headless, camera_connected, nodered_in_network, offline_image_storage, testrun)
+
