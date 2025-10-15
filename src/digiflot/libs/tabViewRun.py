@@ -249,7 +249,7 @@ class TabViewRun(QWidget):
         identifierToWidgetMapping = {"-pH-": self.ph_label, "-EC-": self.ec_label, "-ORP-": self.orp_label, "-LIDAR-": self.lidar_label, "-RTD-": self.temp_label}
         identifierToWidgetMapping[widget_identifier].setText(str(deviceHandle.getDisplayValue()))
         if deviceHandle.valueInTolerance():
-            identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: black;")
+            identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: blue;")
         else:
             identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: red;")
 
@@ -257,4 +257,5 @@ class TabViewRun(QWidget):
         self.air_flow_rate.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
     def expandReagentTable(self):
+
         self.reagent_layout.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
