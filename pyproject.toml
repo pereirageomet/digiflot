@@ -18,10 +18,25 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 [tool.setuptools.dynamic]
-dependencies = {file = ["requirements"]}
+dependencies = [
+  'numpy',
+  'python-vlc',
+  'pyzmq',
+  'paho-mqtt==1.6.1',
+  'psutil',
+  'bronkhorst-propar',
+  'minimalmodbus',
+  'kafka-python-ng',
+  'iai-gxipy',
+  'PyQt5',
+  'opencv-python-headless',
+  'pandas',
+  'picamera2; platform_machine == "armv7l" or platform_machine == "aarch64"'
+]
 
 [tool.setuptools.packages.find]
 where= ["src"]
 
 [project.urls]
 Homepage = "https://codebase.helmholtz.cloud/pereir41/digifloat"
+
