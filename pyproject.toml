@@ -15,7 +15,7 @@ requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU GENERAL PUBLIC LICENSE v3.0",
-    "Operating System :: OS Independent",
+    "Operating System :: Linux",
 ]
 
 dependencies = [
@@ -29,6 +29,7 @@ dependencies = [
   "kafka-python-ng",
   "iai-gxipy",
   "PyQt5",
+  "pillow",
   "opencv-python-headless",
   "pandas",
   'picamera2; platform_machine == "armv7l" or platform_machine == "aarch64"'
@@ -36,7 +37,7 @@ dependencies = [
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
-local_scheme = "dirty-tag"
 
 [project.urls]
 Homepage = "https://github.com/pereirageomet/digiflot"
+
