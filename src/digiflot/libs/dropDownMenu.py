@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QAction,QWidgetAction, QLineEdit)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QAction,QWidgetAction, QLineEdit,QSlider)
+from PyQt5.QtCore import Qt
 import logging
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,28 @@ class DropDownMenu:
         import_output_analysis_data_action.triggered.connect(self.openImportOutputAnalysisWindow)
         settings_menu.addAction(import_output_analysis_data_action)
 
+
+
+        # --- Font Size submenu ---
+        settings_menu.addSeparator()
+        font_menu = settings_menu.addMenu("Font Size")
+
+        # Slider widget
+        slider = QSlider(Qt.Horizontal)
+        slider.setMinimum(5)
+        slider.setMaximum(20)
+        slider.setValue(int(self.mainWindow.scale_factor * 10))
+
+        slider_action = QWidgetAction(self.mainWindow)
+        slider_action.setDefaultWidget(slider)
+        font_menu.addAction(slider_action)
+
+        # Connect slider to main window font scale
+        def handle_font_scale_change(value):
+            new_scale = value / 10
+            self.mainWindow.update_font_scale(new_scale)
+
+        slider.valueChanged.connect(handle_font_scale_change)
 
 
         """

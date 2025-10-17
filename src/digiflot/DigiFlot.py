@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (QTabWidget, QApplication, QMainWindow)
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QGuiApplication
 import logging
 import pathlib
 import sys
@@ -84,14 +85,14 @@ try:
     loggingDirectory.mkdir(exist_ok=True)
     headless, camera_connected, nodered_in_network, offline_image_storage, testrun = False, True, False, True, False
     windowCloseFlag = False
-    styleSheet = "QLabel{font-size: 35pt;} QFormLayout{font-size: 15pt;} QLineEdit{font-size: 15pt;} QListWidget{font-size: 15pt;} QGroupBox{font-size: 15pt;} QTableWidget{font-size: 15pt;} QTableWidgetItem{font-size: 15pt;} QHeaderView{font-size: 20pt;} QPushButton{font-size: 15pt;} QTabWidget{font-size: 15pt;} QMenuBar{font-size: 15pt;} QMenu{font-size: 15pt;}"
+    # styleSheet = "QLabel{font-size: 35pt;} QFormLayout{font-size: 15pt;} QLineEdit{font-size: 15pt;} QListWidget{font-size: 15pt;} QGroupBox{font-size: 15pt;} QTableWidget{font-size: 15pt;} QTableWidgetItem{font-size: 15pt;} QHeaderView{font-size: 20pt;} QPushButton{font-size: 15pt;} QTabWidget{font-size: 15pt;} QMenuBar{font-size: 15pt;} QMenu{font-size: 15pt;}"
 except:
     #Windows
     loggingDirectory = pathlib.Path.home()/'DigiFlot'
     loggingDirectory.mkdir(exist_ok=True)
     headless, camera_connected, nodered_in_network, offline_image_storage, testrun = False, False, False, False, False
     windowCloseFlag = True
-    styleSheet = "QLabel{font-size: 25pt;} QFormLayout{font-size: 25pt;} QLineEdit{font-size: 25pt;} QListWidget{font-size: 25pt;} QGroupBox{font-size: 20pt;} QTableWidget{font-size: 25pt;} QTableWidgetItem{font-size: 25pt;} QHeaderView{font-size: 25pt;} QPushButton{font-size: 30pt;} QTabWidget{font-size: 25pt;} QMenuBar{font-size: 25pt;} QMenu{font-size: 25pt;}"
+    # styleSheet = "QLabel{font-size: 25pt;} QFormLayout{font-size: 25pt;} QLineEdit{font-size: 25pt;} QListWidget{font-size: 25pt;} QGroupBox{font-size: 20pt;} QTableWidget{font-size: 25pt;} QTableWidgetItem{font-size: 25pt;} QHeaderView{font-size: 25pt;} QPushButton{font-size: 30pt;} QTabWidget{font-size: 25pt;} QMenuBar{font-size: 25pt;} QMenu{font-size: 25pt;}"
 loggingFilePath = loggingDirectory/"DigiFlot_log.txt"
 logging.basicConfig(filename=str(loggingFilePath),
                     filemode='a',
@@ -100,9 +101,75 @@ logging.basicConfig(filename=str(loggingFilePath),
                     level=logging.INFO)
 logger = logging.getLogger('DigiFlot')
 
+def generate_dynamic_stylesheet(scale_factor: float) -> str:
+    """Generate scaled font sizes and navy background with consistent headers/tabs."""
+    base = {
+        "QLabel": 20,
+        "QFormLayout": 14,
+        "QLineEdit": 14,
+        "QListWidget": 14,
+        "QGroupBox": 14,
+        "QTableWidget": 14,
+        "QTableWidgetItem": 14,
+        "QHeaderView": 16,
+        "QPushButton": 14,
+        "QTabWidget": 14,
+        "QMenuBar": 14,
+        "QMenu": 14,
+    }
+
+    # --- Font sizes ---
+    css_parts = [f"{widget}{{font-size: {int(size * scale_factor)}pt;}}" for widget, size in base.items()]
+    css = " ".join(css_parts)
+
+    # --- Global theme ---
+    css += """
+        QWidget {
+            background-color: #001f3f;
+            color: white;
+        }
+
+        /* --- Tabs --- */
+        QTabBar::tab {
+            background: #001f3f;        /* dark navy for unselected tabs */
+            color: white;
+            padding: 6px 12px;
+            border: 1px solid #003366;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+        QTabBar::tab:selected {
+            background: #003366;        /* brighter navy for selected tab */
+            font-weight: bold;
+        }
+
+        /* --- Table headers --- */
+        QHeaderView::section {
+            background-color: #003366;
+            color: white;
+            font-weight: bold;
+            border: 1px solid #001f3f;
+            padding: 6px;
+        }
+
+        /* --- Scrollbars and misc --- */
+        QScrollBar:vertical, QScrollBar:horizontal {
+            background: #001f3f;
+        }
+    """
+    return css
+
+
+# Get default scale from screen DPI
+_tmp_app = QGuiApplication(sys.argv)
+dpi = _tmp_app.primaryScreen().logicalDotsPerInch()
+default_scale_factor = dpi / 96  # baseline at 96 DPI
+_tmp_app.quit()
+
 class MainWindow(QMainWindow):
     def __init__(self, camera_connected, nodered_in_network, offline_image_storage, testrun):
         super().__init__()
+
         # Hide Window Close Button
         self.setWindowFlag(Qt.WindowCloseButtonHint, windowCloseFlag)
         try:
@@ -150,6 +217,11 @@ class MainWindow(QMainWindow):
 
         camInstance = self.camAdapter.getCamInstance()
         taskModel.setCamera(camInstance)
+
+        # --- Font scaling setup ---
+        # Load stored font scale, or fall back to default DPI-based value
+        self.scale_factor = float(configuration["font scale"])
+        self.update_font_scale(self.scale_factor)
 
         #offline image storage process
         self.imageStorage = ImageStorage(camInstance)
@@ -236,12 +308,24 @@ class MainWindow(QMainWindow):
             # Proceed with the default close event
             super().closeEvent(event)
 
+    def update_font_scale(self, scale: float):
+        """Apply a new font scaling factor to the entire app."""
+        self.scale_factor = scale
+        self.setStyleSheet(generate_dynamic_stylesheet(scale))
+        
+        # Persist new value in shared config
+        config = configurationManager.getConfig("MainWindow")
+        config["font scale"] = scale
+        configurationManager.storeToJson()
+
+
 def main(headless = False, camera_connected = True, nodered_in_network = True, offline_image_storage = True, testrun = False):
     if headless:
         app = QApplication(sys.argv+['-platform', 'minimal'])
     else:
         app = QApplication(sys.argv)
-    app.setStyleSheet(styleSheet)
+    app.setStyleSheet(generate_dynamic_stylesheet(default_scale_factor))
+
     
     #custom_font = QFont()
     #custom_font.setWeight(40)

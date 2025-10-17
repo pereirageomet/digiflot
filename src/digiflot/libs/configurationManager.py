@@ -25,7 +25,7 @@ def initializeSharedConfiguration(path):
         shared_config["DataForwarder"] = manager.dict({"broker" :  "10.20.30.40", "port" : 1212, "topic_sub" : "Server/Sub", "topic_pub" : "topic", "username" : "PASS", "password" : "PASS"})
         shared_config["TabViewInformation"] = {"broker" :  "10.20.30.40", "port" : 1212, "topic_sub" : "Server/Sub", "topic_pub" : "topic_view", "username" : "PASS", "password" : "PASS"}
         shared_config["Controller"] = {"measurement timer" : 1000, "run tab timer" : 100, "camera tab timer" : 30}
-        shared_config["MainWindow"] = {"software" : "DigiFlot Lab Assistant", "project" : "default", "camera model class" : "RaspiCamModel"}
+        shared_config["MainWindow"] = {"software" : "DigiFlot Lab Assistant", "project" : "default", "camera model class" : "RaspiCamModel","font scale":1}
         # try to load configuration, or store default values alternatively
         loadConfFromJsonRelentlessly()
 
