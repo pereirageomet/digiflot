@@ -122,7 +122,7 @@ def _ensure_contrast_variant(qc: QColor, make_lighter: bool, min_lum_diff: float
         return QColor(225, 225, 225) if make_lighter else QColor(200, 200, 200)
 
     # try iterative lighter/darker steps
-    factors = [115, 125, 140, 160, 190, 230]
+    factors = [115, 125, 150, 160, 190, 230]
     candidate = qc
     for f in factors:
         candidate = qc.lighter(f) if make_lighter else qc.darker(f)
@@ -138,9 +138,9 @@ def _adjust_font_color_if_equal(bg_qc: QColor, font_qc: QColor) -> QColor:
         bg_lum = _perceived_luminance(bg_qc)
         if bg_lum < 128:
             # dark bg => font must be very bright
-            return _ensure_contrast_variant(bg_qc, make_lighter=True, min_lum_diff=140)
+            return _ensure_contrast_variant(bg_qc, make_lighter=True, min_lum_diff=150)
         else:
-            return _ensure_contrast_variant(bg_qc, make_lighter=False, min_lum_diff=140)
+            return _ensure_contrast_variant(bg_qc, make_lighter=False, min_lum_diff=150)
 
     # if luminance too close, adjust similarly
     if abs(_perceived_luminance(bg_qc) - _perceived_luminance(font_qc)) < 10:
@@ -199,13 +199,14 @@ def generate_dynamic_stylesheet(scale_factor: float,
             color: {font_hex};
         }}
 
+        /* Tabs */
         QTabBar::tab {{
             background: {bg_hex};
             color: {font_hex};
-            padding: 6px 12px;
-            border: 1px solid {font_hex};
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
+            padding: 1px 8px;
+            border: 2px solid {font_hex};
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
         }}
         QTabBar::tab:selected {{
             background: {selected_hex};
@@ -213,12 +214,32 @@ def generate_dynamic_stylesheet(scale_factor: float,
             font-weight: bold;
         }}
 
+        /* Table headers */
         QHeaderView::section {{
-            background-color: {header_hex};
+            background-color: {selected_hex};
             color: {font_hex};
             font-weight: bold;
             border: 1px solid {font_hex};
             padding: 4px;
+        }}
+
+        /* Buttons */
+        QPushButton {{
+            background-color: {selected_hex};
+            color: {font_hex};
+            border: 1px solid {font_hex};
+            border-radius: 6px;
+            padding: 6px 12px;
+        }}
+        QPushButton:hover {{
+            background-color: {selected_hex};
+            color: {font_hex};
+            font-weight: bold;
+        }}
+        QPushButton:pressed {{
+            background-color: {bg_hex};
+            color: {font_hex};
+            font-weight: bold;
         }}
     """
     return css
@@ -243,7 +264,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"DigiFlot v{ver}")
         
         #self.setWindowTitle('DigiFlot')
-        self.dfont = ("Helvetica",50)
+        self.dfont = ("Helvetica",50) # this must be deleted
         self.openWindows = []
         self.nodered_in_network = nodered_in_network
         self.offline_image_storage = offline_image_storage
@@ -270,6 +291,13 @@ class MainWindow(QMainWindow):
         # obtain configuration for MainWindow
         configuration = configurationManager.getConfig("MainWindow")
 
+        # --- Font scaling and color setup ---
+        # Load stored font scale, or fall back to default DPI-based value
+        self.scale_factor = float(configuration["font scale"])
+        self.bg_color = configuration["background color"]
+        self.font_color  = configuration["font color"]
+        self.update_fontscale_colors(self.scale_factor,self.bg_color,self.font_color)
+
         # start prompt for entering the project id
         projectWindow = EnterProjectWindow()
         self.openWindows.append(projectWindow)
@@ -281,13 +309,6 @@ class MainWindow(QMainWindow):
 
         camInstance = self.camAdapter.getCamInstance()
         taskModel.setCamera(camInstance)
-
-        # --- Font scaling and color setup ---
-        # Load stored font scale, or fall back to default DPI-based value
-        self.scale_factor = float(configuration["font scale"])
-        self.bg_color = configuration["background color"]
-        self.font_color  = configuration["font color"]
-        self.update_fontscale_colors(self.scale_factor,self.bg_color,self.font_color)
 
         #offline image storage process
         self.imageStorage = ImageStorage(camInstance)

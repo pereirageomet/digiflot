@@ -11,22 +11,111 @@ manager = None
 shared_config = None
 json_path = None
 
+def _get_default_config():
+    """Return a dictionary with all default configuration values."""
+    defaults = {
+        "RaspiCamModel": {
+            "camera trademark": "Raspberry Pi",
+            "image interval": 1.0,
+            "exposure time": 20,
+            "gain": 20.0,
+            "normalize image": False,
+            "output raw image": False,
+            "image format": "tiff",
+            "brightness": 0.0,
+            "contrast": 1.0,
+            "saturation": 1.0,
+            "sharpness": 1.0,
+        },
+        "DahengCamModel": {
+            "camera trademark": "Daheng",
+            "image interval": 1.0,
+            "exposure time": 200,
+            "gain": 1.0,
+            "normalize image": False,
+            "output raw image": False,
+            "image format": "tiff",
+        },
+        "DataForwarder": {
+            "broker": "10.20.30.40",
+            "port": 1212,
+            "topic_sub": "Server/Sub",
+            "topic_pub": "topic",
+            "username": "PASS",
+            "password": "PASS",
+        },
+        "TabViewInformation": {
+            "broker": "10.20.30.40",
+            "port": 1212,
+            "topic_sub": "Server/Sub",
+            "topic_pub": "topic_view",
+            "username": "PASS",
+            "password": "PASS",
+        },
+        "Controller": {
+            "measurement timer": 1000,
+            "run tab timer": 100,
+            "camera tab timer": 30,
+        },
+        "MainWindow": {
+            "software": "DigiFlot Lab Assistant",
+            "project": "default",
+            "camera model class": "RaspiCamModel",
+            "font scale": 1,
+            "background color": "#000000",
+            "font color": "#ffffff",
+        },
+    }
+    return defaults
+
+
+def _ensure_all_defaults_present():
+    """Ensure that any missing keys/subkeys from the defaults are added to shared_config."""
+    global shared_config, manager
+    defaults = _get_default_config()
+
+    for key, default_val in defaults.items():
+        # Create top-level if missing
+        if key not in shared_config:
+            shared_config[key] = (
+                manager.dict(default_val) if isinstance(default_val, dict) else default_val
+            )
+            continue
+
+        # Update nested dicts if partially missing
+        target = shared_config[key]
+        if isinstance(default_val, dict):
+            if isinstance(target, dict):
+                for subkey, subval in default_val.items():
+                    if subkey not in target:
+                        target[subkey] = subval
+            elif hasattr(target, "keys"):  # Manager.dict
+                for subkey, subval in default_val.items():
+                    if subkey not in target.keys():
+                        target[subkey] = subval
+
+
 def initializeSharedConfiguration(path):
-    global manager
-    global shared_config
-    global json_path
+    """
+    Initialize the shared configuration manager with default values.
+    Loads user configuration from JSON if available, otherwise stores defaults.
+    """
+    global manager, shared_config, json_path
     json_path = path
+
     if manager is None:
         manager = Manager()
-        # Initialization with default values for linux
+        defaults = _get_default_config()
+
+        # Initialize with defaults using manager.dict for subdicts
         shared_config = {}
-        shared_config["RaspiCamModel"] = manager.dict({"camera trademark" : "Raspberry Pi", "image interval" : 1.0, "exposure time" : 20, "gain" : 20.0, "normalize image" : False, "output raw image" : False, "image format" : "tiff", "brightness" : 0.0, "contrast" : 1.0, "saturation" : 1.0, "sharpness" : 1.0})
-        shared_config["DahengCamModel"] = manager.dict({"camera trademark" : "Daheng", "image interval" : 1.0, "exposure time" : 200, "gain" : 1.0, "normalize image" : False, "output raw image" : False, "image format" : "tiff"})
-        shared_config["DataForwarder"] = manager.dict({"broker" :  "10.20.30.40", "port" : 1212, "topic_sub" : "Server/Sub", "topic_pub" : "topic", "username" : "PASS", "password" : "PASS"})
-        shared_config["TabViewInformation"] = {"broker" :  "10.20.30.40", "port" : 1212, "topic_sub" : "Server/Sub", "topic_pub" : "topic_view", "username" : "PASS", "password" : "PASS"}
-        shared_config["Controller"] = {"measurement timer" : 1000, "run tab timer" : 100, "camera tab timer" : 30}
-        shared_config["MainWindow"] = {"software" : "DigiFlot Lab Assistant", "project" : "default", "camera model class" : "RaspiCamModel","font scale":1,"background color": "#000080","font color": "#ffffff"}
-        # try to load configuration, or store default values alternatively
+        for key, val in defaults.items():
+            if isinstance(val, dict):
+                shared_config[key] = manager.dict(val)
+            else:
+                shared_config[key] = val
+
+        # Load user configuration and fill in any missing defaults
         loadConfFromJsonRelentlessly()
 
 def updateSharedConfiguration(path):
@@ -113,7 +202,10 @@ def loadConfFromJsonRelentlessly():
                         shared_config[className].update(dct[className])
                     else:
                         shared_config[className].update(manager.dict(dct[className]))
-
+            
+            _ensure_all_defaults_present()
+            storeConfToJsonRelentlessly()  # optional but recommended
+            
             success = True  
 
 def tryToLoadConfFromJson():
