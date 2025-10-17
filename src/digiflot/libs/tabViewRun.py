@@ -192,12 +192,12 @@ class TabViewRun(QWidget):
     def displayRemainingTime(self, remainingTimeInStage, beepFlag=False):
         if remainingTimeInStage < 10:
             text_color="red"
-            self.time_label.setStyleSheet(f"font-size: 60pt; color: {text_color};")
+            self.time_label.setStyleSheet(f"font-size: 70pt; color: {text_color};")
             if beepFlag:
                 vlcBeepAndSkim.beepOnce()
         else:
-            text_color="black"
-            self.time_label.setStyleSheet(f"font-size: 50pt; color: {text_color};")
+            # text_color="black"
+            self.time_label.setStyleSheet(f"font-size: 50pt;")# color: {text_color};
         self.time_label.setText(str(round(remainingTimeInStage,1)))
 
     def displayMeasurementCompleted(self):
