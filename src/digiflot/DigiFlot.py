@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QTabWidget, QApplication, QMainWindow)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QGuiApplication
+from PyQt5.QtGui import (QGuiApplication,QColor)
 import logging
 import pathlib
 import sys
@@ -101,8 +101,81 @@ logging.basicConfig(filename=str(loggingFilePath),
                     level=logging.INFO)
 logger = logging.getLogger('DigiFlot')
 
-def generate_dynamic_stylesheet(scale_factor: float) -> str:
-    """Generate scaled font sizes and navy background with consistent headers/tabs."""
+def _perceived_luminance(qc: QColor) -> float:
+    return 0.2126 * qc.red() + 0.7152 * qc.green() + 0.0722 * qc.blue()
+
+def _is_pure_black(qc: QColor) -> bool:
+    return qc.red() == 0 and qc.green() == 0 and qc.blue() == 0
+
+def _is_pure_white(qc: QColor) -> bool:
+    return qc.red() == 255 and qc.green() == 255 and qc.blue() == 255
+
+def _ensure_contrast_variant(qc: QColor, make_lighter: bool, min_lum_diff: float = 18.0):
+    """Return a visibly lighter/darker variant. Handles pure black/white specially."""
+    base_lum = _perceived_luminance(qc)
+
+    # special-case black / white to guarantee change
+    if _is_pure_black(qc):
+        # return a visible dark gray when "darken" requested (fallback), otherwise a medium gray when lighten
+        return QColor(30, 30, 30) if not make_lighter else QColor(60, 60, 60)
+    if _is_pure_white(qc):
+        return QColor(225, 225, 225) if make_lighter else QColor(200, 200, 200)
+
+    # try iterative lighter/darker steps
+    factors = [115, 125, 140, 160, 190, 230]
+    candidate = qc
+    for f in factors:
+        candidate = qc.lighter(f) if make_lighter else qc.darker(f)
+        if abs(_perceived_luminance(candidate) - base_lum) >= min_lum_diff:
+            return candidate
+    # fallback: return last candidate even if small change
+    return candidate
+
+def _adjust_font_color_if_equal(bg_qc: QColor, font_qc: QColor) -> QColor:
+    """If font equals or too close to bg, return a contrasting font color (strong difference)."""
+    # identical hex
+    if bg_qc.name().lower() == font_qc.name().lower():
+        bg_lum = _perceived_luminance(bg_qc)
+        if bg_lum < 128:
+            # dark bg => font must be very bright
+            return _ensure_contrast_variant(bg_qc, make_lighter=True, min_lum_diff=140)
+        else:
+            return _ensure_contrast_variant(bg_qc, make_lighter=False, min_lum_diff=140)
+
+    # if luminance too close, adjust similarly
+    if abs(_perceived_luminance(bg_qc) - _perceived_luminance(font_qc)) < 10:
+        bg_lum = _perceived_luminance(bg_qc)
+        if bg_lum < 128:
+            return _ensure_contrast_variant(bg_qc, make_lighter=True, min_lum_diff=110)
+        else:
+            return _ensure_contrast_variant(bg_qc, make_lighter=False, min_lum_diff=110)
+
+    return font_qc
+
+def compute_theme_colors(bg_hex: str, font_hex: str):
+    """
+    Return tuple (bg_hex, font_hex_adjusted, selected_hex, header_hex).
+    header_hex will be same as selected_hex.
+    """
+    bg_q = QColor(bg_hex)
+    font_q = QColor(font_hex)
+    # ensure font contrast
+    font_q = _adjust_font_color_if_equal(bg_q, font_q)
+
+    lum = _perceived_luminance(bg_q)
+    make_lighter = lum < 128
+    selected_q = _ensure_contrast_variant(bg_q, make_lighter, min_lum_diff=18.0)
+    # for headers we want maybe a slightly stronger contrast: compute with larger threshold
+    header_q = _ensure_contrast_variant(bg_q, make_lighter, min_lum_diff=30.0)
+
+    return bg_q.name(), font_q.name(), selected_q.name(), header_q.name()
+
+def generate_dynamic_stylesheet(scale_factor: float,
+                                bg_color: str = "#000000",
+                                font_color: str = "#ffffff") -> str:
+    """Build stylesheet using compute_theme_colors()."""
+    bg_hex, font_hex, selected_hex, header_hex = compute_theme_colors(bg_color, font_color)
+
     base = {
         "QLabel": 20,
         "QFormLayout": 14,
@@ -117,45 +190,36 @@ def generate_dynamic_stylesheet(scale_factor: float) -> str:
         "QMenuBar": 14,
         "QMenu": 14,
     }
-
-    # --- Font sizes ---
     css_parts = [f"{widget}{{font-size: {int(size * scale_factor)}pt;}}" for widget, size in base.items()]
     css = " ".join(css_parts)
 
-    # --- Global theme ---
-    css += """
-        QWidget {
-            background-color: #001f3f;
-            color: white;
-        }
+    css += f"""
+        QWidget {{
+            background-color: {bg_hex};
+            color: {font_hex};
+        }}
 
-        /* --- Tabs --- */
-        QTabBar::tab {
-            background: #001f3f;        /* dark navy for unselected tabs */
-            color: white;
+        QTabBar::tab {{
+            background: {bg_hex};
+            color: {font_hex};
             padding: 6px 12px;
-            border: 1px solid #003366;
+            border: 1px solid {font_hex};
             border-top-left-radius: 6px;
             border-top-right-radius: 6px;
-        }
-        QTabBar::tab:selected {
-            background: #003366;        /* brighter navy for selected tab */
+        }}
+        QTabBar::tab:selected {{
+            background: {selected_hex};
+            color: {font_hex};
             font-weight: bold;
-        }
+        }}
 
-        /* --- Table headers --- */
-        QHeaderView::section {
-            background-color: #003366;
-            color: white;
+        QHeaderView::section {{
+            background-color: {header_hex};
+            color: {font_hex};
             font-weight: bold;
-            border: 1px solid #001f3f;
-            padding: 6px;
-        }
-
-        /* --- Scrollbars and misc --- */
-        QScrollBar:vertical, QScrollBar:horizontal {
-            background: #001f3f;
-        }
+            border: 1px solid {font_hex};
+            padding: 4px;
+        }}
     """
     return css
 
@@ -218,10 +282,12 @@ class MainWindow(QMainWindow):
         camInstance = self.camAdapter.getCamInstance()
         taskModel.setCamera(camInstance)
 
-        # --- Font scaling setup ---
+        # --- Font scaling and color setup ---
         # Load stored font scale, or fall back to default DPI-based value
         self.scale_factor = float(configuration["font scale"])
-        self.update_font_scale(self.scale_factor)
+        self.bg_color = configuration["background color"]
+        self.font_color  = configuration["font color"]
+        self.update_fontscale_colors(self.scale_factor,self.bg_color,self.font_color)
 
         #offline image storage process
         self.imageStorage = ImageStorage(camInstance)
@@ -308,14 +374,19 @@ class MainWindow(QMainWindow):
             # Proceed with the default close event
             super().closeEvent(event)
 
-    def update_font_scale(self, scale: float):
+    def update_fontscale_colors(self, scale: float, bg_color: str, font_color: str):
         """Apply a new font scaling factor to the entire app."""
         self.scale_factor = scale
-        self.setStyleSheet(generate_dynamic_stylesheet(scale))
+        self.bg_color = bg_color
+        self.font_color = font_color
+        
+        self.setStyleSheet(generate_dynamic_stylesheet(scale, self.bg_color, self.font_color))
         
         # Persist new value in shared config
         config = configurationManager.getConfig("MainWindow")
-        config["font scale"] = scale
+        config["font scale"] = scale     
+        config["background color"] = self.bg_color
+        config["font color"] = self.font_color   
         configurationManager.storeToJson()
 
 

@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QAction,QWidgetAction, QLineEdit,QSlider)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QAction,QWidgetAction, QLineEdit,QSlider,QColorDialog)
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
 import logging
 logger = logging.getLogger(__name__)
 
@@ -94,9 +95,43 @@ class DropDownMenu:
         # Connect slider to main window font scale
         def handle_font_scale_change(value):
             new_scale = value / 10
-            self.mainWindow.update_font_scale(new_scale)
+            current_bg = self.mainWindow.bg_color
+            current_font = self.mainWindow.font_color
+            self.mainWindow.update_fontscale_colors(new_scale,current_bg,current_font)
 
         slider.valueChanged.connect(handle_font_scale_change)
+
+        # --- Color customization ---
+        settings_menu.addSeparator()
+        color_menu = settings_menu.addMenu("Color Theme")
+
+        # Pick background color
+        pick_bg_action = QAction("Choose background color", self.mainWindow)
+        pick_bg_action.triggered.connect(self.choose_background_color)
+        color_menu.addAction(pick_bg_action)
+
+        # Pick font color
+        pick_font_action = QAction("Choose font color", self.mainWindow)
+        pick_font_action.triggered.connect(self.choose_font_color)
+        color_menu.addAction(pick_font_action)
+
+    def choose_background_color(self):
+        current_color = self.mainWindow.bg_color
+        color = QColorDialog.getColor(QColor(current_color), self.mainWindow, "Select Background Color")
+        if color.isValid():
+            new_bg = color.name()
+            current_font = self.mainWindow.font_color
+            current_scale_factor = self.mainWindow.scale_factor
+            self.mainWindow.update_fontscale_colors(current_scale_factor,new_bg, current_font)
+
+    def choose_font_color(self):
+        current_color = self.mainWindow.font_color
+        color = QColorDialog.getColor(QColor(current_color), self.mainWindow, "Select Font Color")
+        if color.isValid():
+            new_font = color.name()
+            current_bg = self.mainWindow.bg_color
+            current_scale_factor = self.mainWindow.scale_factor
+            self.mainWindow.update_fontscale_colors(current_scale_factor,current_bg, new_font)
 
 
         """
