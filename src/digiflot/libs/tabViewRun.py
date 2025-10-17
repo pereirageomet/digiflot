@@ -97,7 +97,7 @@ class TabViewRun(QWidget):
         # Time
         time_layout = QHBoxLayout()
         self.time_label = QLabel(f"Remaining time: {self.taskModel.targett} seconds")
-        self.time_label.setStyleSheet("font-size: 50pt; color: black;")
+        self.time_label.setStyleSheet("font-size: 50pt;")#; color: black
         self.time_label.setAlignment(Qt.AlignCenter)
         time_layout.addWidget(self.time_label)
         mainLayout.addLayout(time_layout)
@@ -248,10 +248,10 @@ class TabViewRun(QWidget):
     def displayMeasuredValueAndCheckForTolerance(self, widget_identifier, deviceHandle: FormalHardwareInterface):
         identifierToWidgetMapping = {"-pH-": self.ph_label, "-EC-": self.ec_label, "-ORP-": self.orp_label, "-LIDAR-": self.lidar_label, "-RTD-": self.temp_label}
         identifierToWidgetMapping[widget_identifier].setText(str(deviceHandle.getDisplayValue()))
-        if deviceHandle.valueInTolerance():
-            identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: blue;")
-        else:
+        if not deviceHandle.valueInTolerance():
             identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: red;")
+        # else:
+        #     identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: red;")
 
     def expandAirFlowRateLabel(self):
         self.air_flow_rate.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
