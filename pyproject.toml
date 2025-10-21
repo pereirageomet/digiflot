@@ -32,7 +32,7 @@ dependencies = [
   "pillow",
   "opencv-python-headless",
   "pandas",
-  'picamera2; platform_machine == "armv7l" or platform_machine == "aarch64"'
+  "picamera2; (platform_machine == 'armv7l' or platform_machine == 'aarch64')"
 ]
 
 [tool.setuptools_scm]
@@ -40,4 +40,5 @@ version_scheme = "post-release"
 
 [project.urls]
 Homepage = "https://github.com/pereirageomet/digiflot"
+
 
