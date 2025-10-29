@@ -141,12 +141,17 @@ class TabViewRun(QWidget):
 
         # Next Stage Info
         next_stage_layout = QHBoxLayout()
-        self.next_stage_title = QLabel("Next:")
-        self.next_stage_label = QLabel(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
-        self.next_stage_type = QLabel(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"])
-        next_stage_layout.addWidget(self.next_stage_title)
-        next_stage_layout.addWidget(self.next_stage_label)
-        next_stage_layout.addWidget(self.next_stage_type)
+        self.next_stage_title = "Next: " + self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"] + " - "+ self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"]
+        self.next_stage_reagentName = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Reagent'])
+        self.next_stage_reagentConc = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Concentration'])
+        self.next_stage_reagentVol = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Volume'])
+        self.next_stage_text = QLabel(self.next_stage_title+ " (Reagent: " + self.next_stage_reagentName + ", " + self.next_stage_reagentConc + ", " + self.next_stage_reagentVol+")")
+        # self.next_stage_label = QLabel(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
+        # self.next_stage_type = QLabel(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"])
+       
+        next_stage_layout.addWidget(self.next_stage_text)
+        # next_stage_layout.addWidget(self.next_stage_label)
+        # next_stage_layout.addWidget(self.next_stage_type)
         mainLayout.addLayout(next_stage_layout)
 
         self.setLayout(mainLayout)
@@ -181,8 +186,13 @@ class TabViewRun(QWidget):
         self.displayRemainingTime(self.taskModel.targett)
         self.type_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage, "Type"])
         self.stage_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage, "Stage"])
-        self.next_stage_type.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"])
-        self.next_stage_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
+        self.next_stage_title = "Next: " + self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"] + " - "+ self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"]
+        self.next_stage_reagentName = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Reagent'])
+        self.next_stage_reagentConc = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Concentration'])
+        self.next_stage_reagentVol = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Volume'])
+        self.next_stage_text.setText(self.next_stage_title+ " (Reagent: " + self.next_stage_reagentName + ", " + self.next_stage_reagentConc + ", " + self.next_stage_reagentVol+")")
+        # self.next_stage_type.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"])
+        # self.next_stage_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
         
     def updateToPausedStatus(self):
         self.status_label.setText(self.taskModel.status)
@@ -201,8 +211,9 @@ class TabViewRun(QWidget):
         self.time_label.setText(str(round(remainingTimeInStage,1)))
 
     def displayMeasurementCompleted(self):
-        self.next_stage_type.setText("")
-        self.next_stage_label.setText("")
+        # self.next_stage_type.setText("")
+        # self.next_stage_label.setText("")
+        self.next_stage_text.setText("")
         self.time_label.setText(" - - ")
         self.status_label.setText(self.taskModel.status)
         self.start_button.setEnabled(False)
@@ -216,7 +227,12 @@ class TabViewRun(QWidget):
         self.target_ph.setText(str(self.taskModel.schemesample.loc[self.taskModel.currentstage, 'Target pH']))
         self.reagent_name.setText(str(self.taskModel.schemesample.loc[self.taskModel.currentstage, 'Reagent']))
         self.reagent_concentration.setText(str(self.taskModel.schemesample.loc[self.taskModel.currentstage, 'Concentration']))
-        self.reagent_volume.setText(str(self.taskModel.schemesample.loc[self.taskModel.currentstage, 'Volume']))        
+        self.reagent_volume.setText(str(self.taskModel.schemesample.loc[self.taskModel.currentstage, 'Volume']))
+        self.next_stage_title = "Next: " + self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"] + " - "+ self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"]
+        self.next_stage_reagentName = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Reagent'])
+        self.next_stage_reagentConc = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Concentration'])
+        self.next_stage_reagentVol = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Volume'])
+        self.next_stage_text.setText(self.next_stage_title+ " (Reagent: " + self.next_stage_reagentName + ", " + self.next_stage_reagentConc + ", " + self.next_stage_reagentVol+")")
 
     def updateWholeRunTabToCurrentStage(self):
         self.displayRemainingTime(self.taskModel.targett)
@@ -230,13 +246,19 @@ class TabViewRun(QWidget):
             self.prev_stage_button.setEnabled(True)                            
             
         if self.taskModel.currentstage == self.taskModel.nstages:
-            self.next_stage_button.setEnabled(False)        
-            self.next_stage_type.setText("Completed")
-            self.next_stage_label.setText("")
+            self.next_stage_button.setEnabled(False)
+            self.next_stage_text.setText("Completed")    
+            # self.next_stage_type.setText("Completed")
+            # self.next_stage_label.setText("")
         else:
-            self.next_stage_button.setEnabled(True)                    
-            self.next_stage_type.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"])
-            self.next_stage_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
+            self.next_stage_button.setEnabled(True)
+            self.next_stage_title = "Next: " + self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"] + " - "+ self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"]
+            self.next_stage_reagentName = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Reagent'])
+            self.next_stage_reagentConc = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Concentration'])
+            self.next_stage_reagentVol = str(self.taskModel.schemesample.loc[self.taskModel.currentstage+1, 'Volume'])
+            self.next_stage_text.setText(self.next_stage_title+ " (Reagent: " + self.next_stage_reagentName + ", " + self.next_stage_reagentConc + ", " + self.next_stage_reagentVol+")")
+            # self.next_stage_type.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Type"])
+            # self.next_stage_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
 
     def startClicked(self):
         if self.taskModel.checkIfTargetPhIsSet:
@@ -246,7 +268,7 @@ class TabViewRun(QWidget):
             QMessageBox.warning(self, "Warning", 'Please select a sample first.')
  
     def displayMeasuredValueAndCheckForTolerance(self, widget_identifier, deviceHandle: FormalHardwareInterface):
-        identifierToWidgetMapping = {"-pH-": self.ph_label, "-EC-": self.ec_label, "-ORP-": self.orp_label, "-LIDAR-": self.lidar_label, "-RTD-": self.temp_label}
+        identifierToWidgetMapping = {"-pH-": self.ph_label, "-EC-": self.ec_label, "-ORP-": self.orp_label, "-LIDAR-": self.lidar_label, "-Temp-": self.temp_label}
         identifierToWidgetMapping[widget_identifier].setText(str(deviceHandle.getDisplayValue()))
         if not deviceHandle.valueInTolerance():
             identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: red;")
