@@ -268,7 +268,7 @@ class TabViewRun(QWidget):
             QMessageBox.warning(self, "Warning", 'Please select a sample first.')
  
     def displayMeasuredValueAndCheckForTolerance(self, widget_identifier, deviceHandle: FormalHardwareInterface):
-        identifierToWidgetMapping = {"-pH-": self.ph_label, "-EC-": self.ec_label, "-ORP-": self.orp_label, "-LIDAR-": self.lidar_label, "-Temp-": self.temp_label}
+        identifierToWidgetMapping = {"-pH-": self.ph_label, "-EC-": self.ec_label, "-ORP-": self.orp_label, "-LIDAR-": self.lidar_label, "-RTD-": self.temp_label}
         identifierToWidgetMapping[widget_identifier].setText(str(deviceHandle.getDisplayValue()))
         if not deviceHandle.valueInTolerance():
             identifierToWidgetMapping[widget_identifier].setStyleSheet(f"color: red;")

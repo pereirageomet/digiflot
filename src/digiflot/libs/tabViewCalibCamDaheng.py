@@ -3,7 +3,7 @@ logger = logging.getLogger(__name__)
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QDoubleSpinBox, QCheckBox, QGroupBox, QLineEdit, QSizePolicy)
 from PyQt5.QtGui import QPixmap
 try:
-    from PIL.ImageQt import ImageQt
+    from PIL.ImageQt import Image
 except:
     ImageQt = None
     logger.error("Probably the PyQt installation is broken, or PIL is not installed.")
