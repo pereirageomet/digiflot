@@ -13,9 +13,9 @@ description = "A digital and modular platform to assist on laboratory flotation 
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU GENERAL PUBLIC LICENSE v3.0",
-    "Operating System :: Linux",
+    "License: GPL version 3",
+    "Keywords: laboratory assistant,froth flotation",
+    "Author-email: "L. Pereira" <l.pereira@hzdr.de>"
 ]
 
 dependencies = [
@@ -44,6 +44,7 @@ local_scheme = "no-local-version"
 
 [project.urls]
 Homepage = "https://github.com/pereirageomet/digiflot"
+
 
 
 
