@@ -14,8 +14,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "License: GPL version 3",
-    "Keywords: laboratory assistant,froth flotation",
-    "Author-email: "L. Pereira" <l.pereira@hzdr.de>"
+    "Keywords: laboratory assistant,froth flotation"
 ]
 
 dependencies = [
@@ -44,6 +43,7 @@ local_scheme = "no-local-version"
 
 [project.urls]
 Homepage = "https://github.com/pereirageomet/digiflot"
+
 
 
 
