@@ -35,10 +35,15 @@ dependencies = [
   "picamera2; (platform_machine == 'armv7l' or platform_machine == 'aarch64')"
 ]
 
+[tool.setuptools]
+packages = ["digiflot"]
+
 [tool.setuptools_scm]
-version_scheme = "post-release"
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"
 
 [project.urls]
 Homepage = "https://github.com/pereirageomet/digiflot"
+
 
 
