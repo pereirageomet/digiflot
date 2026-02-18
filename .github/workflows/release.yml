@@ -1,9 +1,8 @@
 name: Build and Publish DigiFlot
 
 on:
-  push:
-    tags:
-      - "*"
+  release:
+    types: [published]
 
 jobs:
   build-and-publish:
