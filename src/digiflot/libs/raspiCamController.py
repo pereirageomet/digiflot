@@ -71,13 +71,9 @@ class RaspiCamController:
         for i, info in enumerate(camera_info):
             cam = Picamera2(info['Num'])
             
-            # Server for camera 0, Client for others
-            mode = controls.rpi.SyncModeEnum.Server if i == 0 else controls.rpi.SyncModeEnum.Client
-            
             config = cam.create_still_configuration(
                 main={"format": 'RGB888'},
                 controls={
-                    'SyncMode': mode,
                     'FrameRate': 30,
                     'ExposureTime': int(self.conf_dict.get("exposure time", 100) * 1000),
                     'AnalogueGain': self.conf_dict.get("gain", 1.0),
@@ -92,7 +88,7 @@ class RaspiCamController:
                 cam.start(config)
                 self.cameras.append(cam)
                 self.camera_configs.append(config)
-                logger.info(f"Camera {i} started as {mode}")
+                logger.info(f"Camera {i} started")
             except Exception as e:
                 logger.error(f"Camera {i} failed to start: {e}")
                 cam.close()
