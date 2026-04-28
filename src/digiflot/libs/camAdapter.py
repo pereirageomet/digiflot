@@ -76,8 +76,8 @@ class CamAdapter:
                 imageHeight,
                 imageWidth,
                 nof_pixel_values,
+                idx,
             )
-            cam_handle.camera_index = idx
             self._cam_handles.append(cam_handle)
             self._image_arrays.append(img_array)
 

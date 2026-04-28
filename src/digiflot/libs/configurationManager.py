@@ -22,7 +22,8 @@ def _get_default_config():
     """Return a dictionary with all default configuration values."""
     defaults = {
         "RaspiCamModel": {
-            "cameras": []
+            "cameras": {},
+            "current_camera_index": 0
         },
         "DahengCamModel": {
             "camera trademark": "Daheng",

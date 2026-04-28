@@ -259,7 +259,10 @@ class TabViewCalibCamRaspi(QWidget):
             intervalbild = self.interval_spin.value()
 
             #update settings of camera, if necessary
-            cam.queryUpdateCamSettings(intervalbild, gain, exposure_time, NimgW, NimgH, NimgB, NimgC, NimgS, new_image_sharpness)
+            changed_settings = cam.queryUpdateCamSettings(intervalbild, gain, exposure_time, NimgW, NimgH, NimgB, NimgC, NimgS, new_image_sharpness)
+            if changed_settings:
+                # Apply to hardware via controller
+                self.camAdapter._controller.updateCamSettings(changed_settings)
 
             #get image
             image_format = self.color_space_combo.currentText()
