@@ -1,3 +1,4 @@
+"""Module docstring."""
 import logging
 logger = logging.getLogger(__name__)
 

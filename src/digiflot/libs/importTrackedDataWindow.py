@@ -1,3 +1,4 @@
+"""Module docstring."""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton)
 from PyQt5.QtCore import Qt
 import pathlib

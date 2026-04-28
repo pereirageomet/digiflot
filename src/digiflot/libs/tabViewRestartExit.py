@@ -1,3 +1,7 @@
+"""Module providing a widget with Restart and Exit buttons for the application.
+
+This widget allows the user to save data and exit the application or restart it.
+"""
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QApplication
 from PyQt5.QtCore import Qt, QSize
 
@@ -6,13 +10,16 @@ try:
 except:
     from . import eventManager
 
+
 class TabViewRestartExit(QWidget):
+    """Widget containing Restart and Exit buttons for application control."""
     def __init__(self, camAdapater):
         super().__init__()
         self.camAdapater = camAdapater
         self.initUI()
 
     def initUI(self):
+        """Initialize the user interface with Restart and Exit buttons."""
         # Create main layout
         mainLayout = QHBoxLayout()
 

@@ -1,3 +1,9 @@
+"""Module providing dropdown menu functionality for the DigiFlot application.
+
+This module defines the DropDownMenu class and related widgets for managing
+application settings, acquisition modes, color themes, font sizes, and
+import/export functionality via a menu bar.
+"""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QAction,QWidgetAction, QLineEdit,QSlider,QColorDialog)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
@@ -11,14 +17,18 @@ try:
 except:
     from .importTrackedDataWindow import ImportTrackedDataWindow    
     from .importInputAnalysis import ImportInputAnalysisWindow    
-    from .importOutputAnalysis import ImportOutputAnalysisWindow    
+    from .importOutputAnalysis import ImportOutputAnalysisWindow  
+
 
 class DropDownMenu:
+    """Manages the application menu bar with settings and import/export options."""
     def __init__(self, mainWindow):
+        """Initialize the dropdown menu with a reference to the main window."""
         self.mainWindow = mainWindow
         self.make_the_menu_bar()
 
     def make_the_menu_bar(self):
+        """Build the menu bar with settings, acquisition modes, and import actions."""
         # Menu bar
         menu_bar = self.mainWindow.menuBar()
 
@@ -94,6 +104,7 @@ class DropDownMenu:
 
         # Connect slider to main window font scale
         def handle_font_scale_change(value):
+            """Update font scale when slider value changes."""
             new_scale = value / 10
             current_bg = self.mainWindow.bg_color
             current_font = self.mainWindow.font_color
@@ -116,6 +127,7 @@ class DropDownMenu:
         color_menu.addAction(pick_font_action)
 
     def choose_background_color(self):
+        """Open a color dialog to select and apply a new background color."""
         current_color = self.mainWindow.bg_color
         color = QColorDialog.getColor(QColor(current_color), self.mainWindow, "Select Background Color")
         if color.isValid():
@@ -125,6 +137,7 @@ class DropDownMenu:
             self.mainWindow.update_fontscale_colors(current_scale_factor,new_bg, current_font)
 
     def choose_font_color(self):
+        """Open a color dialog to select and apply a new font color."""
         current_color = self.mainWindow.font_color
         color = QColorDialog.getColor(QColor(current_color), self.mainWindow, "Select Font Color")
         if color.isValid():
@@ -151,26 +164,31 @@ class DropDownMenu:
         """
 
     def openOnlineConfigWindow(self):
+        """Open the online configuration window for MQTT settings."""
         window = OnlineConfigWindow(self.mainWindow.dataForwarder)
         window.show()
         self.mainWindow.openWindows.append(window)
 
     def openImportTrackedDataWindow(self):
+        """Open the import tracked data window."""
         window = ImportTrackedDataWindow(self.mainWindow.controller.taskModel)
         window.show()
         self.mainWindow.openWindows.append(window)
 
     def openImportInputAnalysisWindow(self):
+        """Open the import input analysis window."""
         window = ImportInputAnalysisWindow(self.mainWindow.controller.taskModel)
         window.show()
         self.mainWindow.openWindows.append(window)
 
     def openImportOutputAnalysisWindow(self):
+        """Open the import output analysis window."""
         window = ImportOutputAnalysisWindow(self.mainWindow.controller.taskModel)
         window.show()
         self.mainWindow.openWindows.append(window)
 
     def handle_offline_aquisition_action(self):
+        """Toggle offline image storage mode and update the menu item color."""
         if self.mainWindow.offline_image_storage:
             self.mainWindow.offline_image_storage = False
             self.mainWindow.imageStorage.finishProcessesAndQueues()
@@ -181,6 +199,7 @@ class DropDownMenu:
             self.offline_action.set_color("green")
 
     def handle_online_aquisition_action(self):
+        """Toggle online data forwarding mode and update the menu item color."""
         if self.mainWindow.nodered_in_network:
             self.mainWindow.nodered_in_network = False
             self.online_action.set_color("red")
@@ -199,8 +218,11 @@ class DropDownMenu:
                 self.mainWindow.nodered_in_network = True
                 self.online_action.set_color("green")
 
+
 class ColoredMenuItem(QWidgetAction):
+    """A menu item widget that displays text with customizable background and text colors."""
     def __init__(self, text, parent=None):
+        """Initialize the menu item with display text and optional parent."""
         super().__init__(parent)
 
         # Create a widget to act as the menu item
@@ -218,18 +240,23 @@ class ColoredMenuItem(QWidgetAction):
         self.setDefaultWidget(self.widget)
 
     def set_color(self, bg_color, text_color='black'):
+        """Set the background and text colors for the menu item."""
         # Apply styles to the widget and label
         self.widget.setStyleSheet(f"background-color: {bg_color};")
         self.label.setStyleSheet(f"color: {text_color};")
 
+
 class OnlineConfigWindow(QWidget):
+    """Dialog window for configuring MQTT broker connection settings."""
     def __init__(self, dataForwarder):
+        """Initialize the configuration window with current MQTT settings."""
         super().__init__()
         self.dataForwarder = dataForwarder
         self.setWindowTitle('Online configuration')
         layout = QVBoxLayout()
 
         def addLabelAndLineEdit(layout, label_text, lineEdit_text=""):
+            """Helper to create a label-lineEdit pair and add it to the layout."""
             layout_level_2_mqtt = QHBoxLayout()
             label = QLabel(label_text)
             layout_level_2_mqtt.addWidget(label)
@@ -252,6 +279,7 @@ class OnlineConfigWindow(QWidget):
         self.setLayout(layout)
 
     def handleSetButtonPushed(self):
+        """Read MQTT settings from the form and reconnect the data forwarder."""
         try:
             broker = self.lineEdit_mqttDomain.text()
             port = int(self.lineEdit_port.text())
@@ -263,7 +291,10 @@ class OnlineConfigWindow(QWidget):
         else:
             self.dataForwarder.reconnectStreamToMqttBroker(broker=broker, port=port, topic_pub=topic_pub, username=username, password=password)
             self.close()
+
+
 def main():
+    """Entry point for standalone execution."""
     pass
 
 if __name__=="__main__":

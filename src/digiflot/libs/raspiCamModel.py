@@ -1,3 +1,4 @@
+"""Module docstring."""
 import logging
 logger = logging.getLogger(__name__)
 import cv2
@@ -12,11 +13,10 @@ def variance_of_laplacian(imgbytes):
     return cv2.Laplacian(imgbytes, cv2.CV_64F).var()
 
 class RaspiCamModel():
-    def __init__(self, configuration, taskModel, message_queue, image_array, imageHeight, imageWidth, nof_pixel_values):
+    def __init__(self, configuration, taskModel, image_array, imageHeight, imageWidth, nof_pixel_values):
         self.configuration = configuration
 
         self.taskModel = taskModel
-        self.message_queue = message_queue
         self.image_array = image_array        
                 
         self.colorCAM = "red"
@@ -134,7 +134,7 @@ class RaspiCamModel():
             m, n, o = self.getImageParameters()
             # then in each new process create a new numpy array using:
             with self.image_array.get_lock():
-                self.last_fetched_image = np.frombuffer(self.image_array.get_obj(), dtype=np.uint8).reshape((m,n,o)).copy()
+                self.last_fetched_image = np.frombuffer(self.image_array.get_obj(), dtype=np.uint8).reshape((int(m), int(n), int(o))).copy()
             return True, self.last_fetched_image
 
     def getLatestImage(self, image_format=""):
@@ -173,15 +173,10 @@ class RaspiCamModel():
 
     def queryUpdateCamSettings(self, intervalbild, gain, exposureTime, NimageWidth, NimageHeight, NimageBrightness, NimageContrast, NimageSaturation, NimageSharpness):
         if self.configuration["image interval"] != intervalbild or self.configuration["gain"] != gain or self.configuration["exposure time"] != exposureTime or NimageWidth != self.imageWidth or NimageHeight != self.imageHeight or NimageBrightness != self.configuration["brightness"] or NimageContrast != self.configuration["contrast"] or NimageSaturation != self.configuration["saturation"] or NimageSharpness != self.configuration["sharpness"]:
-            dct = {}
-            dct["intervalbild_query"] = intervalbild
-            dct["gain_query"] = gain
-            dct["exposureTime_query"] = exposureTime
-            dct["imageHeight_query"] = NimageHeight
-            dct["imageWidth_query"] = NimageWidth
-            dct["imageBrightness_query"] = NimageBrightness
-            dct["imageContrast_query"] = NimageContrast
-            dct["imageSaturation_query"] = NimageSaturation
-            dct["imageSharpness_query"] = NimageSharpness
-            dct["message"] = "LOAD"
-            self.message_queue.put(dct)
+            self.configuration["image interval"] = intervalbild
+            self.configuration["gain"] = gain
+            self.configuration["exposure time"] = exposureTime
+            self.configuration["brightness"] = NimageBrightness
+            self.configuration["contrast"] = NimageContrast
+            self.configuration["saturation"] = NimageSaturation
+            self.configuration["sharpness"] = NimageSharpness

@@ -1,17 +1,40 @@
+"""Module providing MQTT interface functionality.
+
+This module defines the MqttInterface class for connecting to MQTT brokers,
+publishing messages, and subscribing to topics. It handles client lifecycle
+and message callbacks.
+"""
 import random
 from paho.mqtt import client as mqtt_client
 import time
 
 class MqttInterface:
+    """MQTT interface for publishing and subscribing to topics.
+
+    Manages MQTT client connection, message publishing, and subscription
+    handling with context manager support.
+    """
+
     def __enter__(self):
+        """Enter context manager."""
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
+        """Exit context manager and disconnect client."""
         if self.client is not None:
             self.client.disconnect()
             self.client = None
 
     def __init__(self, broker='10.20.30.40', port=1212, topic_sub="TOPIC_SUB", topic_pub="TOPIC_PUB", username="test_pub", password="test_pub"):
+        """Initialize MQTT interface with connection parameters.
+
+        :param broker: MQTT broker address
+        :param port: MQTT broker port
+        :param topic_sub: Default subscription topic
+        :param topic_pub: Default publishing topic
+        :param username: MQTT username
+        :param password: MQTT password
+        """
 
         self.broker = broker
         self.port = port
@@ -39,16 +62,22 @@ class MqttInterface:
         self.client = None
 
     def __del__(self):
+        """Destructor: disconnect client if still connected."""
         if self.client is not None:
             self.client.disconnect()
             self.client = None
 
     def waitForMsg(self):
+        """Wait for and return the next message.
+
+        :return: First message from the message queue
+        """
         while self.msg == []:
             time.sleep(1e-4)
         return self.msg.pop(0)
 
     def connectMqtt(self):
+        """Connect to the MQTT broker with configured credentials."""
         def on_connect(client, userdata, flags, rc):
             if rc == 0:
                 print("Connected to MQTT Broker!")
@@ -67,6 +96,11 @@ class MqttInterface:
         self.client.connect(self.broker, self.port)
 
     def publish(self, msg, local_topic_pub=None):
+        """Publish a message to the MQTT broker.
+
+        :param msg: Message payload to publish
+        :param local_topic_pub: Optional topic override (uses default if None)
+        """
         if local_topic_pub is None:
             result = self.client.publish(self.topic_pub, msg)
             # result: [0, 1]
@@ -86,6 +120,7 @@ class MqttInterface:
                 print(f"Failed to send message to topic_pub {local_topic_pub}")
 
     def subscribe(self):
+        """Subscribe to the default subscription topic with message timing."""
         def on_message(client, userdata, msg):
             self.stop = time.time()
             self.timing_list.append(self.stop-self.start)
@@ -99,6 +134,11 @@ class MqttInterface:
         self.client.message_callback_add(self.topic_sub, on_message)        
 
     def subscribeToTimer(self, on_message, timer_topic="Server/Sub"):
+        """Subscribe to a timer topic with custom message handler.
+
+        :param on_message: Callback function for received messages
+        :param timer_topic: Topic to subscribe to (default: "Server/Sub")
+        """
         print("Subscribe to timer of spark")
         self.client.subscribe(timer_topic)
         self.client.message_callback_add(timer_topic, on_message)

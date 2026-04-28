@@ -1,3 +1,9 @@
+"""Module for Bronkhorst mass flow controller interface.
+
+This module provides a wrapper around the propar library to interface with
+Bronkhorst mass flow controllers via serial connection. It handles device
+initialization, flow control, and measurement fetching.
+"""
 import logging
 logger = logging.getLogger(__name__)
 try:
@@ -12,12 +18,31 @@ else:
 import pathlib
 
 class BronkhorstFlowControlModel:
+    """
+    Interface for Bronkhorst mass flow controllers.
+
+    This class provides a wrapper around the propar library to communicate with
+    Bronkhorst mass flow controllers via serial connection. It handles device
+    initialization, air flow control, and measurement fetching.
+
+    Attributes:
+        measuredAirFlow (float): Last fetched actual air flow measurement in mL/min
+        measuredSetAirFlow (float): Last fetched set air flow value in mL/min
+        instrument: The propar instrument object for communication
+        successINIT (bool): Flag indicating successful device initialization
+    """
     def __init__(self):
+        """
+        Initialize the BronkhorstFlowControlModel and attempt device connection.
+        """
         self.measuredAirFlow = -1.0
         self.measuredSetAirFlow = -1.0
         self.instrument, self.successINIT = self.getConnection()
 
     def __del__(self):
+        """
+        Cleanup method that sets air flow to zero on deletion.
+        """
         self.setAirFlow(0.0)
 
     def getConnection(self):
@@ -52,9 +77,24 @@ class BronkhorstFlowControlModel:
         return instrument, successINIT
 
     def connectedSuccessfully(self):
+        """
+        Check if the device was successfully initialized.
+
+        Returns:
+            bool: True if device connection and initialization succeeded, False otherwise.
+        """
         return self.successINIT
 
     def setAirFlow(self, value):
+        """
+        Set the air flow setpoint for the Bronkhorst controller.
+
+        Args:
+            value (float): Desired air flow in mL/min. Clamped to range [0.0, 10.0].
+
+        Returns:
+            bool: True if the parameter was written successfully, False otherwise.
+        """
         if not self.connectedSuccessfully():
             return False
 
@@ -68,6 +108,14 @@ class BronkhorstFlowControlModel:
         return success
 
     def fetchAirFlow(self):
+        """
+        Fetch current and set air flow values from the Bronkhorst controller.
+
+        Returns:
+            tuple: ((actual_flow, set_flow), (success_actual, success_set))
+                   where each flow value and success flag correspond to actual and set values.
+                   Returns (None, False) if device is not connected.
+        """
         if not self.connectedSuccessfully():
             return None, False
         
@@ -82,10 +130,20 @@ class BronkhorstFlowControlModel:
             self.measuredSetAirFlow = ret_val2            
         return (ret_val, ret_val2), (success, success2)
 
-    #get the last fetched, valid value for the air flow
     def getAirFlow(self):
+        """
+        Get the last fetched actual air flow value.
+
+        Returns:
+            float: The last measured air flow in mL/min, or -1.0 if not yet fetched.
+        """
         return self.measuredAirFlow
     
-    #get the last fetched, valid value for the set air flow
     def getSetAirFlow(self):
+        """
+        Get the last fetched set air flow value.
+
+        Returns:
+            float: The last set air flow value in mL/min, or -1.0 if not yet fetched.
+        """
         return self.measuredSetAirFlow

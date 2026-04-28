@@ -1,3 +1,9 @@
+"""Module providing offline image storage subprocess functionality.
+
+This module handles saving images to disk in a separate process, supporting
+both compressed and raw formats. It manages image queues and file storage
+with timestamps and stage names.
+"""
 import logging
 logger = logging.getLogger(__name__)
 
@@ -12,30 +18,47 @@ from datetime import datetime
 import numpy as np
 
 def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
-        curr = datetime.now()
-        imgname = str(curr.strftime("%Y%m%d-%H.%M.%S.%f")) + "_" + stagename
-        
-        def saveImg(SF, IN,image,doRaw):
-            bildname = SF+ "/"+IN
-            print(bildname)
-            #image.save(bildname + '.' + fmt, fmt)
-            if isinstance(image, np.ndarray):
-                image_pil = Image.fromarray(image)
-                image_pil.save(bildname + '.' + fmt, format=fmt)
-                if doRaw:
-                    image_pil.save(bildname + '.tiff', format="TIFF")
-                #cv2.imwrite(bildname + '.' + fmt,image)
-                #if (doRaw):
-                #    np.save(bildname,image)
-            else:
-                image.save(bildname + '.' + fmt, fmt)
-                if (doRaw):
-                    image.save(bildname + '.tiff', 'tiff')
+    """Store an image to disk with timestamp and stage name.
 
-        saveImg(str(samplefolder), imgname, image, imgRaw)      
+    :param image: Image data (PIL Image or numpy array)
+    :param stagename: Name of the current stage for filename
+    :param fmt: Image format (e.g., 'jpg', 'png')
+    :param samplefolder: Folder path for saving images
+    :param imgRaw: Whether to also save raw TIFF version
+    :param kwargs: Additional keyword arguments
+    """
+    curr = datetime.now()
+    imgname = str(curr.strftime("%Y%m%d-%H.%M.%S.%f")) + "_" + stagename
+    
+    def saveImg(SF, IN, image, doRaw):
+        """Save image to file, optionally with raw TIFF version.
+
+        :param SF: Sample folder path
+        :param IN: Image name (without extension)
+        :param image: Image data to save
+        :param doRaw: Whether to save raw TIFF version
+        """
+        bildname = SF + "/" + IN
+        print(bildname)
+        if isinstance(image, np.ndarray):
+            image_pil = Image.fromarray(image)
+            image_pil.save(bildname + '.' + fmt, format=fmt)
+            if doRaw:
+                image_pil.save(bildname + '.tiff', format="TIFF")
+        else:
+            image.save(bildname + '.' + fmt, fmt)
+            if doRaw:
+                image.save(bildname + '.tiff', 'tiff')
+
+    saveImg(str(samplefolder), imgname, image, imgRaw)      
 
 def evaluateRequest(message_queue, has_finished):
-    #Default case
+    """Process control messages from the queue.
+
+    :param message_queue: Queue for receiving control messages
+    :param has_finished: Flag indicating if the process should finish
+    :return: Updated has_finished flag
+    """
     if message_queue.empty():
         return has_finished
     else:
@@ -57,24 +80,21 @@ def startOfflineImageStorageLoop(image_dict_queue, image_array, imageHeight, ima
         if not image_dict_queue.empty():
             dct = image_dict_queue.get()
             with image_array.get_lock():
-                # then in each new process create a new numpy array using:
                 image = np.frombuffer(image_array.get_obj(), dtype=np.uint8).reshape((imageHeight, imageWidth, nof_pixel_values)).copy()
             dct["image"] = image
             storePicture(**dct)
 
         time.sleep(1e-3)
-
-        #  Check for next request from client
         has_finished = evaluateRequest(message_queue, has_finished)
 
-    closeQueue(message_queue, "CLOSE_MESSAGE_QUEUE")
-    closeQueue(image_dict_queue, "CLOSE_IMAGE_QUEUE")
-
 def closeQueue(queue, sentinel_message):
+    """Close a multiprocessing queue and join its thread.
+
+    :param queue: Queue to close
+    :param sentinel_message: Message sentinel to stop draining the queue
+    """
     message = None
     ts = time.time()
-    #while not message_queue.empty():
-    #    message_queue.get()    
     while message != sentinel_message:
         if not queue.empty():
             message = queue.get()
@@ -84,12 +104,9 @@ def closeQueue(queue, sentinel_message):
     queue.close()
     queue.join_thread()
 
-#for testing locally
 def main():
+    """Entry point for testing the subprocess module."""
     import multiprocessing as mp
     queue = mp.Queue()
     queue2 = mp.Queue()
-    startOfflineImageStorageLoop(queue, queue2)
-
-if __name__=="__main__":
-    main()
+    startOfflineImageStorageLoop(queue, queue2, 480, 640, 4, queue2)

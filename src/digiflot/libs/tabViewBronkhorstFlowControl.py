@@ -1,20 +1,30 @@
+"""Module providing the UI for Bronkhorst flow control.
+
+This module defines a widget to monitor and set air flow values via a
+Bronkhorst flow controller, including validation and label updates.
+"""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox, QGroupBox, QLineEdit, QSizePolicy, QPushButton)
 import logging
 logger = logging.getLogger(__name__)
 
 import re
+
 def is_positive_float(string):
+    """Check if a string represents a positive float using regex pattern matching."""
     pattern = r"(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?"
     match = re.match(pattern, string)
     return bool(match)
 
+
 class TabViewBronkhorstFlowControl(QWidget):
+    """Widget for monitoring and controlling Bronkhorst air flow settings."""
     def __init__(self, bronkhorstFlowControlModel):
         super().__init__()
         self.bronkhorstFlowControlModel = bronkhorstFlowControlModel
         self.initUI()
 
     def initUI(self):
+        """Initialize the user interface with flow monitoring and control widgets."""
         # Create main layout
         mainLayout = QVBoxLayout()
 
@@ -51,12 +61,14 @@ class TabViewBronkhorstFlowControl(QWidget):
         self.setLayout(mainLayout)
 
     def updateAirFlowLabel(self):
+        """Update the displayed current and set air flow values from the model."""
         value_str = str(self.bronkhorstFlowControlModel.getAirFlow())
         self.airFlowLabel.setText(value_str)
         value_str2 = str(self.bronkhorstFlowControlModel.getSetAirFlow())
         self.airFlowLabel2.setText(value_str2)
 
     def handleSetAirFlowButtonPushed(self):
+        """Read the target value from the line edit, validate it, and set the air flow in the model."""
         target_str = self.targetLineEdit.text()
         if is_positive_float(target_str):
             target_value = float(target_str)

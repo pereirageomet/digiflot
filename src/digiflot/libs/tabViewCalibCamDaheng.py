@@ -1,3 +1,9 @@
+"""Module providing the calibration UI widget for Daheng cameras.
+
+This module defines the TabViewCalibCamDaheng class, a QWidget that displays
+live camera feed and controls for image acquisition settings specific to
+Daheng camera models.
+"""
 import logging
 logger = logging.getLogger(__name__)
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QDoubleSpinBox, QCheckBox, QGroupBox, QLineEdit, QSizePolicy)
@@ -8,7 +14,9 @@ except:
     ImageQt = None
     logger.error("Probably the PyQt installation is broken, or PIL is not installed.")
 
+
 class TabViewCalibCamDaheng(QWidget):
+    """Calibration tab for Daheng cameras."""
     def __init__(self, dahengCamModel):
         super().__init__()
 
@@ -16,6 +24,7 @@ class TabViewCalibCamDaheng(QWidget):
         self.initUI()
 
     def initUI(self):
+        """Initialize the user interface layout and widgets."""
         # Create main layout
         mainLayout = QHBoxLayout()
 
@@ -124,6 +133,7 @@ class TabViewCalibCamDaheng(QWidget):
         self.setLayout(mainLayout)
 
     def resetTabWidgets(self):
+        """Reset all UI widget values to match the Daheng camera's current settings."""
         # Column for image settings
         self.interval_spin.setValue(self.dahengCamModel.get_intervalbild()) 
         self.save_raw_checkbox.setChecked(self.dahengCamModel.get_imgRaw())
@@ -132,15 +142,19 @@ class TabViewCalibCamDaheng(QWidget):
         self.exposure_time_spin.setValue(self.dahengCamModel.get_exposureTime()) 
 
     def expandWidgets(self):
+        """Set the image label to expand and fill available space."""
         self.image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def handleNormalizeCheckboxStateChanged(self):
+        """Update the camera's normalization setting based on checkbox state."""
         self.dahengCamModel.set_imgNorm(self.normalize_checkbox.isChecked())
 
     def handleSaveRawCheckboxStateChanged(self):
+        """Update the camera's raw image saving setting based on checkbox state."""
         self.dahengCamModel.set_imgRaw(self.save_raw_checkbox.isChecked())
 
     def updateCalibCamImage(self):
+        """Fetch and display the latest image from the Daheng camera, applying current settings."""
         if self.dahengCamModel.get_successINIT():
             # get image height
             try:

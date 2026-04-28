@@ -1,3 +1,4 @@
+"""Module docstring."""
 # Describes abstract interface class that must be implemented by every hardware interface class
 import abc
 class FormalHardwareInterface(metaclass=abc.ABCMeta):

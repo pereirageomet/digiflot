@@ -1,3 +1,4 @@
+"""Module docstring."""
 try:
     from libs import trackCPUusage
     from libs import trackRAMusage

@@ -1,3 +1,4 @@
+"""Module docstring."""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QApplication, QProgressDialog, QSizePolicy)
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QTimer

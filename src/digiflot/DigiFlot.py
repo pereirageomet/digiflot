@@ -1,3 +1,8 @@
+"""DigiFlot main application module.
+Provides the Qt based GUI, dynamic theming, and initialization of hardware
+interfaces, model, controller, and various UI tabs.
+"""
+
 from PyQt5.QtWidgets import (QTabWidget, QApplication, QMainWindow)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (QGuiApplication,QColor)
@@ -102,15 +107,60 @@ logging.basicConfig(filename=str(loggingFilePath),
 logger = logging.getLogger('DigiFlot')
 
 def _perceived_luminance(qc: QColor) -> float:
+    """Calculate perceived luminance of a QColor using Rec. 709 coefficients.
+    
+    This function computes the relative brightness of a color as perceived by the
+    human eye using the standard luminance coefficients defined in ITU-R BT.709.
+    The result is used to determine appropriate contrast ratios for UI theming.
+    
+    Args:
+        qc: A QColor object representing the color to evaluate.
+        
+    Returns:
+        float: The perceived luminance value on a scale from 0.0 (black) to 255.0 (white).
+    """
     return 0.2126 * qc.red() + 0.7152 * qc.green() + 0.0722 * qc.blue()
 
 def _is_pure_black(qc: QColor) -> bool:
+    """Check if a QColor is pure black (all RGB components are zero).
+    
+    Args:
+        qc: A QColor object to check.
+        
+    Returns:
+        bool: True if the color is pure black (R=0, G=0, B=0), False otherwise.
+    """
     return qc.red() == 0 and qc.green() == 0 and qc.blue() == 0
 
 def _is_pure_white(qc: QColor) -> bool:
+    """Check if a QColor is pure white (all RGB components are at maximum).
+    
+    Args:
+        qc: A QColor object to check.
+        
+    Returns:
+        bool: True if the color is pure white (R=255, G=255, B=255), False otherwise.
+    """
     return qc.red() == 255 and qc.green() == 255 and qc.blue() == 255
 
-def _ensure_contrast_variant(qc: QColor, make_lighter: bool, min_lum_diff: float = 18.0):
+def _ensure_contrast_variant(qc: QColor, make_lighter: bool, min_lum_diff: float = 18.0) -> QColor:
+    """Generate a color variant with guaranteed luminance difference from the original.
+    
+    This function creates a lighter or darker version of the input color that meets
+    a minimum luminance difference threshold. For pure black and white, special cases
+    are handled to ensure the returned color is visibly different from the input.
+    The function iteratively tries different brightness adjustment factors until the
+    required contrast is achieved.
+    
+    Args:
+        qc: The base QColor to modify.
+        make_lighter: If True, return a lighter variant; if False, return a darker one.
+        min_lum_diff: Minimum required difference in perceived luminance between
+                     the original and modified color. Defaults to 18.0.
+        
+    Returns:
+        QColor: A color variant that differs from the original by at least min_lum_diff.
+    """
     """Return a visibly lighter/darker variant. Handles pure black/white specially."""
     base_lum = _perceived_luminance(qc)
 
@@ -132,6 +182,21 @@ def _ensure_contrast_variant(qc: QColor, make_lighter: bool, min_lum_diff: float
     return candidate
 
 def _adjust_font_color_if_equal(bg_qc: QColor, font_qc: QColor) -> QColor:
+    """Adjust font color to ensure sufficient contrast against background.
+    
+    If the font color is too similar to the background color (either identical or
+    within a small luminance difference threshold), this function returns a modified
+    version of the background color that provides better visibility. The adjustment
+    either lightens or darkens the color depending on the background's luminance.
+    
+    Args:
+        bg_qc: The background QColor.
+        font_qc: The font QColor to check and potentially adjust.
+        
+    Returns:
+        QColor: The adjusted font color that provides adequate contrast, or the
+                original font_qc if sufficient contrast already exists.
+    """
     """If font equals or too close to bg, return a contrasting font color (strong difference)."""
     # identical hex
     if bg_qc.name().lower() == font_qc.name().lower():
@@ -152,10 +217,24 @@ def _adjust_font_color_if_equal(bg_qc: QColor, font_qc: QColor) -> QColor:
 
     return font_qc
 
-def compute_theme_colors(bg_hex: str, font_hex: str):
-    """
-    Return tuple (bg_hex, font_hex_adjusted, selected_hex, header_hex).
-    header_hex will be same as selected_hex.
+def compute_theme_colors(bg_hex: str, font_hex: str) -> tuple[str, str, str, str]:
+    """Generate a complete color theme from background and font color specifications.
+    
+    This function takes a background color and font color, ensures proper contrast
+    between them, and generates additional colors for UI elements like selection
+    highlights and headers. All colors are derived from the base colors to maintain
+    visual consistency.
+    
+    Args:
+        bg_hex: Background color as a hex string (e.g., "#000000").
+        font_hex: Font color as a hex string (e.g., "#ffffff").
+        
+    Returns:
+        A tuple of four hex color strings:
+        - bg_hex: The original background color.
+        - font_hex_adjusted: The font color, adjusted for contrast.
+        - selected_hex: A highlight color for selected items.
+        - header_hex: A distinct color for table headers.
     """
     bg_q = QColor(bg_hex)
     font_q = QColor(font_hex)
@@ -173,7 +252,21 @@ def compute_theme_colors(bg_hex: str, font_hex: str):
 def generate_dynamic_stylesheet(scale_factor: float,
                                 bg_color: str = "#000000",
                                 font_color: str = "#ffffff") -> str:
-    """Build stylesheet using compute_theme_colors()."""
+    """Generate a complete Qt stylesheet with dynamic theming support.
+    
+    This function builds a comprehensive stylesheet for the entire application
+    based on the provided theme colors and font scaling factor. It includes
+    rules for all major Qt widgets including labels, buttons, tables, and tabs,
+    ensuring consistent appearance across the UI.
+    
+    Args:
+        scale_factor: Multiplier for base font sizes to support different DPI settings.
+        bg_color: Background color as a hex string. Defaults to "#000000".
+        font_color: Font color as a hex string. Defaults to "#ffffff".
+        
+    Returns:
+        A string containing the complete CSS stylesheet for Qt widgets.
+    """
     bg_hex, font_hex, selected_hex, header_hex = compute_theme_colors(bg_color, font_color)
 
     base = {
@@ -252,7 +345,44 @@ default_scale_factor = dpi / 96  # baseline at 96 DPI
 _tmp_app.quit()
 
 class MainWindow(QMainWindow):
-    def __init__(self, camera_connected, nodered_in_network, offline_image_storage, testrun):
+    """Main application window for DigiFlot.
+    
+    This class creates and manages the primary GUI window, including all tab views,
+    hardware interface initialization, and data flow management. It handles the
+    application's theme configuration, window state, and interaction between
+    various components through the controller pattern.
+    
+    Attributes:
+        scale_factor: Current font scaling multiplier for DPI adaptation.
+        bg_color: Application background color in hex format.
+        font_color: Application font color in hex format.
+        openWindows: List of child windows opened by this main window.
+        nodered_in_network: Flag indicating if Node-RED is available.
+        offline_image_storage: Flag indicating if offline image storage is enabled.
+        camAdapter: Camera interface adapter managing image acquisition.
+        imageStorage: Offline image storage manager.
+        bronkhorstFlowControlModel: Interface to Bronkhorst flow controller hardware.
+        tabs: QTabWidget containing all application tab views.
+        dataForwarder: Data forwarding service for sending data to external systems.
+        controller: Main controller coordinating application logic.
+        dropDownMenu: Application menu bar.
+    """
+    def __init__(self, camera_connected: bool, nodered_in_network: bool, offline_image_storage: bool, testrun: bool):
+        """Initialize the main application window and all components.
+        
+        This constructor sets up the complete application environment including:
+        - Window configuration and theming
+        - Hardware interfaces (sensors, lidar, flow controller)
+        - Model and controller instances
+        - All tab views and their organization
+        - Event handling and data flow initialization
+        
+        Args:
+            camera_connected: True if a camera is connected and available.
+            nodered_in_network: True if Node-RED is accessible on the network.
+            offline_image_storage: True to enable local image storage.
+            testrun: True to run in test mode (immediate exit after startup).
+        """
         super().__init__()
 
         # Hide Window Close Button
@@ -377,13 +507,22 @@ class MainWindow(QMainWindow):
             exit()
 
     def closeEvent(self, event):
+        """Handle application shutdown procedure.
+        
+        This method is called when the window is closed. It performs cleanup
+        operations including stopping hardware interfaces, saving configuration,
+        closing child windows, and terminating background processes.
+        
+        Args:
+            event: The close event object (may be None for programmatic shutdown).
+        """
         self.bronkhorstFlowControlModel.setAirFlow(0.0)
         # self.sewControl.setRotorSpeed(0.0) #disabled for now
         self.controller.fetch_measurement_timer.stop()
         self.controller.calib_cam_timer.stop()
-        self.dataForwarder.finishProcessesAndQueues()
-        self.imageStorage.finishProcessesAndQueues()
-        self.camAdapter.finishProcessesAndQueues()
+        self.dataForwarder.cleanup()
+        self.imageStorage.cleanup()
+        self.camAdapter.cleanup()
         try:
             configurationManager.storeToJson()
         except:
@@ -396,7 +535,17 @@ class MainWindow(QMainWindow):
             super().closeEvent(event)
 
     def update_fontscale_colors(self, scale: float, bg_color: str, font_color: str):
-        """Apply a new font scaling factor to the entire app."""
+        """Update the application's font scaling and color theme.
+        
+        This method applies new theme settings to all widgets and persists
+        the configuration to disk. The change is immediately visible across
+        the entire application.
+        
+        Args:
+            scale: New font scaling factor.
+            bg_color: New background color in hex format.
+            font_color: New font color in hex format.
+        """
         self.scale_factor = scale
         self.bg_color = bg_color
         self.font_color = font_color
@@ -411,7 +560,23 @@ class MainWindow(QMainWindow):
         configurationManager.storeToJson()
 
 
-def main(headless = False, camera_connected = True, nodered_in_network = True, offline_image_storage = True, testrun = False):
+def main(headless: bool = False, camera_connected: bool = True, nodered_in_network: bool = True, offline_image_storage: bool = True, testrun: bool = False) -> int:
+    """Launch the DigiFlot application with specified configuration.
+    
+    This function initializes the Qt application, sets up the main window
+    with the provided configuration, and starts the event loop. It handles
+    both interactive and headless execution modes.
+    
+    Args:
+        headless: If True, run without GUI display (useful for testing).
+        camera_connected: If True, initialize camera hardware.
+        nodered_in_network: If True, enable Node-RED data forwarding.
+        offline_image_storage: If True, enable local image storage.
+        testrun: If True, perform startup and immediate shutdown.
+        
+    Returns:
+        int: Exit code from the Qt event loop (typically 0 for success).
+    """
     if headless:
         app = QApplication(sys.argv+['-platform', 'minimal'])
     else:
