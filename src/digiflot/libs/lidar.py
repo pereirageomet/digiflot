@@ -22,114 +22,121 @@ import pathlib
 
 class Lidar(FormalHardwareInterface):
 
-    ## LiDar 
-    # RX = 15
-    # pi = pigpio.pi()
-    # pi.set_mode(RX, pigpio.INPUT)
-    # pi.bb_serial_read_open(RX, 115200)
-    # for I in range(0,10):
-    #     time.sleep(0.1)
-    #     (count, recv) = pi.bb_serial_read(RX)
-    # if recv != '':
-    #     modules_list = modules_list + ("LIDAR",)
-    #     _colorLIDAR = "green"
-    #     intervalLIDAR = 1
-    #     _showLIDAR = True
-    # else:
-    #     _showLIDAR = False
-    #     _colorLIDAR = "red"
-
     def __init__(self):
         self._ser = None
         self._showLIDAR = False
         self._colorLIDAR = "red"
-        self._pulplevel = "-"
+        self.pulplevel = "-"
         self._measuredValue = None
+
+        self.measure_period = 0.5 # 0.5s/frame
+        self.block_reading= False # blocks reading if buffer is in use
+        self.measure_buffer_timer = 0.05 # How long to wait for sensor data to fill the buffer (TFmini+ can sent up to 1000hz, must be configured)
 
     @property
     def showLIDAR(self):
         return self._showLIDAR
-
-    @showLIDAR.setter
-    def showLIDAR(self, value):
-        self._showLIDAR = value
-
     @property
     def colorLIDAR(self):
         return self._colorLIDAR
 
+
+
+    
+    @showLIDAR.setter
+    def showLIDAR(self, value):
+        self._showLIDAR = value
     @colorLIDAR.setter
     def colorLIDAR(self, value):
         self._colorLIDAR = value
 
-    @property
-    def pulplevel(self):
-        return self._pulplevel
-
-    @pulplevel.setter
-    def pulplevel(self, value):
-        self._pulplevel = value
 
     def getMeasuredValueFromLIDAR(self):
         if not self.connectedSuccessfully():
-            return "none"
-                
-        #nächste Zeile notwendig notwendig?
-        #self._ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=1)
-        #time.sleep(0.1)
-        count = self._ser.in_waiting
+            return None
+
+        self._ser.reset_input_buffer() # clear input buffer
+        time.sleep(self.measure_buffer_timer) #let the buffer fill
+        count = self._ser.in_waiting # count the number of received bytes in buffer
         if count > 8:
             recv = self._ser.read(9)   
-            self._ser.reset_input_buffer() 
             if recv[0] == 0x59 and recv[1] == 0x59:
                 distance = recv[2] + recv[3] * 256
                 strength = recv[4] + recv[5] * 256
-                self._ser.reset_input_buffer()
-                return(distance)
-        else:
-            return("none")
-        
+                return distance
+
+        logger.warning("Could not receive LiDAR data in time, consider increasing the measure buffer time.")
+
+        return None
+
+
+
+
     def connectToLidar(self, atlasSensor):
         if not SERIAL_AVAILABLE:
             self.showLIDAR = False
             self.colorLIDAR = "red"
-            self.pulplevel="-"
+            self.pulplevel = "-"
             atlasSensor.times_list["LIDAR"] = 1.0
             return
+        self.block_reading = True
 
+        # Check for mounted Serial-To-USB-Adapter
         paths = list(pathlib.Path("/dev/").glob("ttyUSB[0-9]"))
-        if len(paths) == 0:
-            logger.info("No Serial-To-USB-Adapter mounted.")
+        paths.append("/dev/serial0") # add raspi UART port 
+        if not paths:
+            logger.info("LiDAR not found.")
             return None, False
 
-        recv = None
         for path in paths:
             try:
-                _ser = serial.Serial(str(path), 115200, timeout=1)
-                for _ in range(0,10):
-                    time.sleep(0.1)
-                    count = _ser.in_waiting
-                    recv = _ser.read(9)
-                if count > 8 and recv[0] == 0x59 and recv[1] == 0x59:
-                    self._ser = serial.Serial(str(path), 115200, timeout=1)
-                    #one lidar is enough
-                    break
-                else:
-                    logger.info(f"No lidar device at {str(path)}.")
-            except:
-                logger.info(f"No device reachable via serial module at {str(path)}.")
+                # Open with a short timeout to prevent blocking during discovery
+                _ser = serial.Serial(str(path), 115200, timeout=0.1)
+                
+                # Wait briefly for the hardware buffer to populate initially
+                time.sleep(0.1) 
+                
+                # Read everything available to find the LATEST frame
+                data = _ser.read_all()
+                
+                # Look for the last occurrence of the 0x59 0x59 header
+                last_header_idx = data.rfind(b'\x59\x59')
 
-        if self._ser is not None and recv is not None and recv != b'':
-            atlasSensor.modules_list = atlasSensor.modules_list + ["LIDAR"]
-            self.colorLIDAR = "green"
-            intervalLIDAR = .5
-            atlasSensor.times_list["LIDAR"] = intervalLIDAR
-            self.showLIDAR = True
-            self.pulplevel=0
-        else:
-            self.showLIDAR = False
-            self.colorLIDAR = "red"
-            self.pulplevel="-"
+                # Ensure header exists and there's enough data for a full 9-byte frame
+                if last_header_idx != -1 and len(data) >= last_header_idx + 9:
+                    raw = data[last_header_idx : last_header_idx + 9]
+                    
+                    distance = raw[2] + (raw[3] << 8)
+                    logger.info(f"LIDAR connected on {path}: Dist.: {distance}")
+                    
+                    self._ser = _ser # stores the serial interface
+
+                    if "LIDAR" not in atlasSensor.modules_list: # should use a set instead of a list
+                        atlasSensor.modules_list.append("LIDAR")
+                    
+                    self.colorLIDAR = "green"
+                    atlasSensor.times_list["LIDAR"] = self.measure_period
+                    self.showLIDAR = True
+                    self.pulplevel = 0
+                    self.block_reading = True
+
+                    return self._ser 
+                else:
+                    logger.info(f"No valid lidar frame found at {path}.")
+                    _ser.close()
+
+            except Exception as e:
+                logger.info(f"Could not connect to {path}: {e}")
+
+
+
+
+        
+
+        # Fallback if havent yielded a valid sensor
+        self.showLIDAR = False
+        self.colorLIDAR = "red"
+        self.pulplevel = "-"
 
     def connectedSuccessfully(self):
         return self.showLIDAR
@@ -138,7 +145,7 @@ class Lidar(FormalHardwareInterface):
 
     def updateMeasuredValue(self):
         val = self.getMeasuredValueFromLIDAR()
-        if val == 'none':
+        if val == 'none' or val is None:
             val = 0
         self._measuredValue = val
         return val
