@@ -54,6 +54,7 @@ class RaspiCamModel():
             "normalize image": self.configuration.get("normalize image", False),
             "output raw image": self.configuration.get("output raw image", False),
             "image format": self.configuration.get("image format", "png"),
+            "name": self.configuration.get("name", f"Camera_{self.camera_index}"),
         }
         cam_cfg = {**defaults, **cam_cfg}
         # Store back depending on container type
@@ -212,7 +213,7 @@ class RaspiCamModel():
     def getImageDictForSavingOffline(self):
         self.getLatestUnformattedImage()
         #dct = {"image" : self.last_fetched_image, "stagename" : self.taskModel.currentstagename, "fmt" : self.configuration["image format"], "samplefolder" : str(self.taskModel.samplefolder), "imgRaw" : self.configuration["output raw image"]}
-        dct = {"stagename" : self.taskModel.currentstagename, "fmt" : self.camera_config["image format"], "samplefolder" : str(self.taskModel.samplefolder), "imgRaw" : self.camera_config["output raw image"]}
+        dct = {"stagename" : self.taskModel.currentstagename, "fmt" : self.camera_config["image format"], "samplefolder" : str(self.taskModel.samplefolder), "imgRaw" : self.camera_config["output raw image"], "camera_name" : self.camera_config.get("name", f"Camera_{self.camera_index}") }
         return dct
 
     def queryUpdateCamSettings(self, intervalbild, gain, exposureTime, NimageWidth, NimageHeight, NimageBrightness, NimageContrast, NimageSaturation, NimageSharpness):

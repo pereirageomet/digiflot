@@ -85,10 +85,10 @@ class CamAdapter:
         """Create the calibration UI tab linked to this adapter."""
         return TabViewCalibCamRaspi(self)
 
-    def getCamInstance(self):
-        """Return the currently active camera model instance."""
+    def getCamInstance(self,camId = None):
+        """Return the currently active camera model instance or the selected camId."""
         if self._cam_handles:
-            return self._cam_handles[self._active_index]
+            return self._cam_handles[camId or self._active_index]
         return None
 
     def getCalibCamInstance(self):

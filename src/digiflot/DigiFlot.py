@@ -441,9 +441,13 @@ class MainWindow(QMainWindow):
         taskModel.setCamera(camInstance)
 
         #offline image storage process
-        self.imageStorage = ImageStorage(camInstance)
+        self.imageStorages = []
+        for cam in self.camAdapter._cam_handles:
+            img_storage = ImageStorage(cam)
+            self.imageStorages.append(img_storage)
         if offline_image_storage:
-            self.imageStorage.startOfflineStorageService()
+            for stor in self.imageStorages:
+                stor.startOfflineStorageService()
 
         #connection to Bronkhorst Flow Control
         self.bronkhorstFlowControlModel = BronkhorstFlowControlModel()
@@ -493,7 +497,24 @@ class MainWindow(QMainWindow):
         self.dataForwarder = DataForwarder(taskModel, camInstance, controller=None)
 
         #instantiate controller and add it as attribute to mainWindow, otherwise the controller gets destructed after init of mainWindow
-        self.controller = Controller(self.tabs, self.camAdapter, atlasSensor, lidar, self.bronkhorstFlowControlModel, taskModel, deviceDictionary, tabViewSetup, tabViewRun, tabViewInformation, tabViewRestartExit, tabViewCalibCam, tabViewCalibLidar, tabViewCalibSensors, tabViewBronkhorstFlowControl, self.imageStorage, self.dataForwarder) #self.sewControl, removed due to issues
+        self.controller = Controller(
+            self.tabs,
+            self.camAdapter,
+            atlasSensor,
+            lidar,
+            self.bronkhorstFlowControlModel,
+            taskModel,
+            deviceDictionary,
+            tabViewSetup,
+            tabViewRun,
+            tabViewInformation,
+            tabViewRestartExit,
+            tabViewCalibCam,
+            tabViewCalibLidar,
+            tabViewCalibSensors,
+            tabViewBronkhorstFlowControl,
+            self.imageStorages,
+            self.dataForwarder) #self.sewControl, removed due to issues
 
         self.dataForwarder.setController(self.controller)
         if nodered_in_network:
@@ -521,7 +542,8 @@ class MainWindow(QMainWindow):
         self.controller.fetch_measurement_timer.stop()
         self.controller.calib_cam_timer.stop()
         self.dataForwarder.cleanup()
-        self.imageStorage.cleanup()
+        for stor in self.imageStorages:
+            stor.cleanup()
         self.camAdapter.cleanup()
         try:
             configurationManager.storeToJson()

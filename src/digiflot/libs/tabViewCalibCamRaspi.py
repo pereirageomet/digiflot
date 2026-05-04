@@ -7,10 +7,12 @@ brightness, etc.) and supports multi‑camera selection via a dropdown.
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox, QGroupBox, QLineEdit, QSizePolicy)
 from PyQt5.QtGui import QPixmap
 import logging
+from . import configurationManager
 logger = logging.getLogger(__name__)
 
 
 class TabViewCalibCamRaspi(QWidget):
+    from . import configurationManager
     """Calibration tab for Raspberry Pi cameras with multi‑camera selector."""
     def __init__(self, camAdapter):
         super().__init__()
@@ -21,20 +23,26 @@ class TabViewCalibCamRaspi(QWidget):
 
     def initUI(self):
         """Initialize the user interface layout and widgets."""
-        # Create main layout
         mainLayout = QHBoxLayout()
-        # Camera selector (if multiple cameras)
+        # Camera selector and name edit (always shown, even for a single cam)
+        selectorLayout = QVBoxLayout()
         if len(self.camAdapter._cam_handles) > 1:
-            selectorLayout = QVBoxLayout()
             selectorLabel = QLabel("Select Camera")
             self.camera_selector = QComboBox()
-            for idx, cam in enumerate(self.camAdapter._cam_handles):
+            for idx, _ in enumerate(self.camAdapter._cam_handles):
                 self.camera_selector.addItem(f"Camera {idx}")
             self.camera_selector.setCurrentIndex(self._active_index)
             self.camera_selector.currentIndexChanged.connect(self.changeCamera)
             selectorLayout.addWidget(selectorLabel)
             selectorLayout.addWidget(self.camera_selector)
-            mainLayout.addLayout(selectorLayout)
+        # Camera name edit (always present)
+        self.camera_name_edit = QLineEdit()
+        self.camera_name_edit.setPlaceholderText("Camera name")
+        current_cam = self.camAdapter._cam_handles[self._active_index]
+        self.camera_name_edit.setText(current_cam.camera_config.get("name", f"Camera_{self._active_index}"))
+        self.camera_name_edit.editingFinished.connect(self.changeCameraName)
+        selectorLayout.addWidget(self.camera_name_edit)
+        mainLayout.addLayout(selectorLayout)
 
         # Column for image calibration
         imageCalibLayout = QVBoxLayout()
@@ -186,6 +194,10 @@ class TabViewCalibCamRaspi(QWidget):
         self.setLayout(mainLayout)
 
     def resetTabWidgets(self):
+        """Reset UI widgets and keep camera name in sync."""
+        cam = self.camAdapter._cam_handles[self._active_index]
+        # synchronize name edit
+        self.camera_name_edit.setText(cam.camera_config.get("name", f"Camera_{self._active_index}"))
         """Reset all UI widget values to match the active camera's current settings."""
         cam = self.camAdapter._cam_handles[self._active_index]
         # Column for image settings
@@ -208,6 +220,23 @@ class TabViewCalibCamRaspi(QWidget):
         self._active_index = index
         self.camAdapter._active_index = index
         self.resetTabWidgets()
+        # update name edit to reflect new camera's stored name
+        cam = self.camAdapter._cam_handles[self._active_index]
+        self.camera_name_edit.setText(cam.camera_config.get("name", f"Camera_{self._active_index}"))
+
+    def changeCameraName(self):
+        """Save edited camera name to config and persist.
+
+        Called when the QLineEdit editing finishes.
+        """
+        cam = self.camAdapter._cam_handles[self._active_index]
+        new_name = self.camera_name_edit.text().strip()
+        if new_name:
+            cam.camera_config["name"] = new_name
+            # Persist the entire shared configuration
+            configurationManager.storeToJson()
+        # keep UI in sync (in case of empty string fallback)
+        self.camera_name_edit.setText(cam.camera_config.get("name", f"Camera_{self._active_index}"))
 
     def handleResolutionChanged(self, index):
         """Update resolution percentage based on combo box selection."""

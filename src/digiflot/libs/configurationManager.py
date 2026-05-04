@@ -162,23 +162,28 @@ def tryToUpdateSharedConfiguration(path):
         tryToLoadConfFromJson()
 
 def getConfig(key):
-    """
-    Retrieve configuration values for the specified key.
-
-    Args:
-        key: Configuration key to retrieve. Use "all" to retrieve entire shared_config.
-
-    Returns:
-        dict or None: Configuration dictionary for the key, the entire shared_config if
-                      key is "all", or None if the key is not found.
+    """Retrieve configuration dictionary for a given key.
+    Added helper ``get_shared_config_keys`` below to expose available top‑level keys.
     """
     if key == "all":
         return shared_config
-    elif key in shared_config.keys():
+    elif shared_config is not None and key in shared_config.keys():
         return shared_config[key]
     else:
         logger.error(f"The key {key} passed to getConfig is not one of shared_config.")
         return None
+
+def get_shared_config_keys():
+    """Return list of top‑level keys in the shared configuration.
+    If the shared configuration has not been initialized yet, returns an empty list.
+    """
+    if shared_config is None:
+        return []
+    try:
+        return list(shared_config.keys())
+    except Exception:
+        logger.error("Failed to retrieve shared configuration keys.")
+        return []
 
 def convertSharedConfigtoSerializableDict():
     """

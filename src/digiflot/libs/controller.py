@@ -55,7 +55,7 @@ class Controller():
         fetch_measurement_timer: Timer for periodic measurement collection
         calib_cam_timer: Timer for camera calibration updates
     """
-    def __init__(self, tabWidget, camAdapter, atlasSensor, lidar, bronkhorstFlowControlModel, taskModel, deviceDictionary, tabViewSetup, tabViewRun, tabViewInformation, tabViewRestartExit, tabViewCalibCam, tabViewCalibLidar, tabViewCalibSensors, tabViewBronkhorstFlowControl, imageStorage, dataForwarder): #sewControl,  removed due to issues
+    def __init__(self, tabWidget, camAdapter, atlasSensor, lidar, bronkhorstFlowControlModel, taskModel, deviceDictionary, tabViewSetup, tabViewRun, tabViewInformation, tabViewRestartExit, tabViewCalibCam, tabViewCalibLidar, tabViewCalibSensors, tabViewBronkhorstFlowControl, imageStorages, dataForwarder): #sewControl,  removed due to issues
         self.configuration = configurationManager.getConfig("Controller")
         #mainWindow in the role of a tabWidget
         self.tabWidget = tabWidget        
@@ -79,7 +79,7 @@ class Controller():
         self.tabViewCalibSensors = tabViewCalibSensors
         self.tabViewBronkhorstFlowControl = tabViewBronkhorstFlowControl
         #offline acquisition
-        self.imageStorage = imageStorage        
+        self.imageStorages = imageStorages        
         #online acquisition
         self.dataForwarder = dataForwarder
         #Timing objects
@@ -277,7 +277,8 @@ class Controller():
 
         if self.taskModel.status == "RUNNING":
             if self.taskModel.currentstagetype == 'Flotation':
-                self.imageStorage.saveImageOffline()
+                for stor in self.imageStorages:
+                    stor.saveImageOffline()
                 self.dataForwarder.pushDataToDataLake(images_included=True)
             else:
                 self.dataForwarder.pushDataToDataLake(images_included=False)
@@ -372,3 +373,17 @@ class Controller():
         success = self.tabViewInformation.exportInformation()
         if success and self.taskModel.status == "Completed":
             self.performRestart()
+
+
+    def activateCalibrationTabs(self, enabled):
+            try:
+                self.tabWidget.setTabEnabled(5, enabled)
+            except:
+                logger.error("Tab with index 5 does not exist.")
+            else:
+                try:
+                    self.tabWidget.setTabEnabled(6, enabled)
+                except:
+                    logger.error(f"Tab with index 6 does not exist. Last defined tab is {self.tabWidget.tabText(5)}.")
+
+            

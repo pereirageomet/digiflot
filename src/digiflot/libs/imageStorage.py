@@ -31,6 +31,9 @@ class ImageStorage:
         self.cleanup()
 
     def startOfflineStorageService(self):
+        if self.isRunning():
+            logger.warning("Offline storage service already running; start request ignored.")
+            return
         self._image_dict_queue = queue.Queue()
         self._stop_event = threading.Event()
         self._thread = threading.Thread(
@@ -65,6 +68,14 @@ class ImageStorage:
             ).reshape(self._cam_handle.getImageParameters())
             
             dct["image"] = image
+            # Build subfolder path: samplefolder/imgs/<camera_name>
+            from pathlib import Path
+            cam_name = dct.get("camera_name", "unknown")
+            base_folder = Path(dct["samplefolder"]).expanduser()
+            sub_folder = base_folder / "imgs" / cam_name
+            sub_folder.mkdir(parents=True, exist_ok=True)
+            # replace samplefolder with the subfolder for storage
+            dct["samplefolder"] = str(sub_folder)
             imageStorageSubProcess.storePicture(**dct)
         except Exception as e:
             logger.error(f"Failed to save image: {e}")
@@ -87,12 +98,21 @@ class ImageStorage:
                 logger.warning("Image queue full, dropping image")
 
     def finishProcessesAndQueues(self):
-        """Stop the storage thread."""
+        """Stop the storage thread and ensure cleanup."""
         if self.isRunning():
             self._stop_event.set()
             if self._thread is not None:
-                self._thread.join(timeout=2)
+                self._thread.join(timeout=5)
+            # Clear queue to avoid leftover items
+            try:
+                while not self._image_dict_queue.empty():
+                    self._image_dict_queue.get_nowait()
+            except Exception:
+                pass
             self._running = False
+            self._thread = None
+            self._stop_event = None
+            self._image_dict_queue = None
         
     def isRunning(self):
         return self._running and self._thread is not None and self._thread.is_alive()

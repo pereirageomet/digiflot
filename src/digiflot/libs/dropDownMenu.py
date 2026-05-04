@@ -191,11 +191,15 @@ class DropDownMenu:
         """Toggle offline image storage mode and update the menu item color."""
         if self.mainWindow.offline_image_storage:
             self.mainWindow.offline_image_storage = False
-            self.mainWindow.imageStorage.finishProcessesAndQueues()
+            for stor in self.mainWindow.imageStorages:
+                stor.finishProcessesAndQueues()
             self.offline_action.set_color("red")
         else:
             self.mainWindow.offline_image_storage = True
-            self.mainWindow.imageStorage.startOfflineStorageService()
+            # Ensure any previous service is stopped before starting a new one
+            for stor in self.mainWindow.imageStorages:
+                stor.finishProcessesAndQueues()
+                stor.startOfflineStorageService()
             self.offline_action.set_color("green")
 
     def handle_online_aquisition_action(self):
