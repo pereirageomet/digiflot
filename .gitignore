@@ -8,3 +8,4 @@ CoSiFlot-Scree*
 *.png
 *.json
 src/digiflot.egg-info/PKG-INFO
+src/.opencode/
