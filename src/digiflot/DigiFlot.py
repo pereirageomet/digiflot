@@ -615,5 +615,14 @@ def main(headless: bool = False, camera_connected: bool = True, nodered_in_netwo
     return app.exec()
 
 if __name__=="__main__":
-    main(headless, camera_connected, nodered_in_network, offline_image_storage, testrun)
+    try:
+        main(headless, camera_connected, nodered_in_network, offline_image_storage, testrun)
+    except Exception as e:
+        logger.error(e)
+        # Kill matching processes while explicitly excluding this script's PID
+        import subprocess
+        cmd = f'pkill -f "python.*digiflot" --exclude {os.getpid()} && echo "DigiFlot stopped." || echo "No DigiFlot process found."'
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, executable='/bin/bash')
+        print(result.stdout.strip())
+
 
