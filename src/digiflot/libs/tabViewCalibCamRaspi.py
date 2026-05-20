@@ -5,7 +5,7 @@ live camera feed and controls for image acquisition settings (gain, exposure,
 brightness, etc.) and supports multi‑camera selection via a dropdown.
 """
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox, QGroupBox, QLineEdit, QSizePolicy)
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap,QImage
 import logging
 from . import configurationManager
 logger = logging.getLogger(__name__)
@@ -240,7 +240,7 @@ class TabViewCalibCamRaspi(QWidget):
 
     def handleResolutionChanged(self, index):
         """Update resolution percentage based on combo box selection."""
-        resolution_values = [25, 33, 50, 75, 100]
+        resolution_values = [10, 25, 50, 75, 100]
         self._resolution_pct = resolution_values[index]
 
     def handleNormalizeCheckboxStateChanged(self):
@@ -270,6 +270,7 @@ class TabViewCalibCamRaspi(QWidget):
             try:
                 NimgW = round(self.aspect_ratio_spin.value()/10*640/480*NimgH, 0)
             except (TypeError,ValueError):
+                logger.warning("Preview error, setting to 640px")
                 NimgW = 640
             
             # get image brightness, contrast and saturation
@@ -295,16 +296,22 @@ class TabViewCalibCamRaspi(QWidget):
 
             #get image
             image_format = self.color_space_combo.currentText()
-            image_updated, imgbytes = cam.getLatestImage(image_format, self._resolution_pct)
+
+            target_w = max(1, round(cam.getImageWidth() * self._resolution_pct / 100))
+            target_h = max(1, round(cam.getImageHeight() * self._resolution_pct / 100))
+            image_updated, imgbytes = cam.getLatestImage(image_format="PREVIEW",scale=[target_w,target_h])
 
             if image_updated:
-                # Create QPixmap instance (use scaled dimensions)
-                target_w = max(1, round(cam.getImageWidth() * self._resolution_pct / 100))
-                target_h = max(1, round(cam.getImageHeight() * self._resolution_pct / 100))
-                pixmap = QPixmap(target_w, target_h)
+                # # Create QPixmap instance (use scaled dimensions)
 
-                # Put bytes of example.bmp into it
-                pixmap.loadFromData(imgbytes)
+                # pixmap = QPixmap(target_w, target_h)
+                # # Put bytes of example.bmp into it
+                # pixmap.loadFromData(imgbytes,image_format="RAW")
+                # # Update image by applying the pixmap to the label
+                # self.image_label.setPixmap(pixmap)
 
-                # Update image by applying the pixmap to the label
-                self.image_label.setPixmap(pixmap)
+                h, w, ch = imgbytes.shape
+                bytes_per_line = ch * w
+                q_img = QImage(imgbytes.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+                # q_img = QImage(imgbytes.data, w, h, bytes_per_line, QImage.Format.Format_BGR888)
+                self.image_label.setPixmap(QPixmap.fromImage(q_img))

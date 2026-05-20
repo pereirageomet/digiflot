@@ -72,7 +72,7 @@ class RaspiCamController:
             cam = Picamera2(info['Num'])
             
             config = cam.create_still_configuration(
-                main={"format": 'RGB888'},
+                main={"format": 'BGR888'},
                 controls={
                     'FrameRate': 30,
                     'ExposureTime': int(self.conf_dict.get("exposure time", 100) * 1000),
@@ -104,18 +104,26 @@ class RaspiCamController:
     
     def captureFrames(self):
         """Capture frames from all cameras simultaneously.
-        
+
         Returns:
             list: List of numpy arrays, one per camera
         """
         frames = []
+
         for cam in self.cameras:
             try:
                 frame = cam.capture_array()
-                frames.append(frame)
+
+                if frame is None:
+                    frames.append(None)
+                    continue
+
+                frames.append(np.array(frame, copy=True, order="C"))
+
             except Exception as e:
                 logger.error(f"Failed to capture from camera: {e}")
                 frames.append(None)
+
         return frames
     
     def captureFramesToSharedMemory(self):

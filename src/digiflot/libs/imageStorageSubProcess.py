@@ -7,6 +7,8 @@ with timestamps and stage names.
 import logging
 logger = logging.getLogger(__name__)
 
+import tifffile
+
 import time
 try:
     from PIL import Image
@@ -39,12 +41,18 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
         :param doRaw: Whether to save raw TIFF version
         """
         bildname = SF + "/" + IN
-        print(bildname)
+        # print(bildname)
         if isinstance(image, np.ndarray):
-            image_pil = Image.fromarray(image)
-            image_pil.save(bildname + '.' + fmt, format=fmt)
-            if doRaw:
-                image_pil.save(bildname + '.tiff', format="TIFF")
+            if fmt == "tiff":
+                if doRaw: # sem compressao
+                    tifffile.imwrite(f"{bildname}.tiff", image, compression=None)
+                else: #com compressao
+                    tifffile.imwrite(f"{bildname}.tiff", image, compression="zstd") #! zstd REQUER O PACOTE IMAGECONDECAS: pip install imagecodecs
+                    # tifffile.imwrite(f"{bildname}.tiff", image, compression="lzw") #! LZW - codec mais antigo
+
+            else:
+                image_pil = Image.fromarray(image)
+                image_pil.save(bildname + '.' + fmt, format=fmt)
         else:
             image.save(bildname + '.' + fmt, fmt)
             if doRaw:
@@ -84,7 +92,7 @@ def startOfflineImageStorageLoop(image_dict_queue, image_array, imageHeight, ima
             dct["image"] = image
             storePicture(**dct)
 
-        time.sleep(1e-3)
+        time.sleep(5e-3)
         has_finished = evaluateRequest(message_queue, has_finished)
 
 def closeQueue(queue, sentinel_message):

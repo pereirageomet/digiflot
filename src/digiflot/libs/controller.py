@@ -18,11 +18,22 @@ try:
     from libs import eventManager
     ##ConfigurationManager
     from libs import configurationManager  
+
+    from libs.devTools import *
 except:
     from . import vlcBeepAndSkim
     from . import eventManager
     ##ConfigurationManager
     from . import configurationManager  
+
+
+
+
+
+
+
+
+
 class Controller():
     """
     Central controller managing hardware components and process state.
@@ -82,12 +93,14 @@ class Controller():
         self.imageStorages = imageStorages        
         #online acquisition
         self.dataForwarder = dataForwarder
-        #Timing objects
+
+        #!Timing objects
         self.run_timer = QTimer()
         self.run_timer.timeout.connect(self.handleRunningStatus)
         self.fetch_measurement_timer = QTimer()
         self.fetch_measurement_timer.timeout.connect(self.handleFetchMeasurementEvent)
         self.fetch_measurement_timer.start(self.configuration["measurement timer"]) #ms
+
         self.calib_cam_timer = QTimer()
         self.calib_cam_timer.timeout.connect(self.handleUpdateCalibCamEvent)                        
 
@@ -125,19 +138,26 @@ class Controller():
         parameters.
         """
         currentRowIndex = self.tabViewSetup.sampleList.currentRow()
-        self.taskModel.selectedSample = self.tabViewSetup.sampleList.item(currentRowIndex).text()
-        msg = self.taskModel.tryToLoadSchemeSampleAndCreateSampleFolder()
+
+        self.taskModel.selectedSample = self.tabViewSetup.sampleList.item(currentRowIndex)
+
+        if self.taskModel.selectedSample is None: # Check if there is an input first
+            msg = "Please select the test sample from the working directory."
+        else: 
+            self.taskModel.selectedSample = self.taskModel.selectedSample.text()
+            msg = self.taskModel.tryToLoadSchemeSampleAndCreateSampleFolder()
         if msg is not None:
             logger.warning(msg)
             self.showWarningPopup(msg)
-        else:
-            #No error msg => Display
-            self.taskModel.markStart()
-            self.tabWidget.setTabVisible(1, True)
-            self.tabViewSetup.okButton.setEnabled(False)     
-            self.tabViewSetup.displaySampleScheme()
-            self.tabViewRun.displayMeasurementParameters()
-            self.tabViewInformation.reloadTablesForNewSetup()
+            return
+
+        #No error msg => Display
+        self.taskModel.markStart()
+        self.tabWidget.setTabVisible(1, True)
+        self.tabViewSetup.okButton.setEnabled(False)     
+        self.tabViewSetup.displaySampleScheme()
+        self.tabViewRun.displayMeasurementParameters()
+        self.tabViewInformation.reloadTablesForNewSetup()
 
     def handleWorkingFolderButtonClicked(self):
         """
@@ -160,8 +180,8 @@ class Controller():
 
         Triggers the run tab start action and disables calibration tabs.
         """
+        self.activateCalibrationTabs(False) #deactivate tabs before running
         self.tabViewRun.startClicked()
-        self.activateCalibrationTabs(False)
 
     def handlePauseButtonClicked(self):
         """
@@ -255,6 +275,8 @@ class Controller():
 
         self.activateCalibrationTabs(True)
 
+    
+    @timeit
     def handleFetchMeasurementEvent(self):
         """
         Handle periodic measurement fetch events.
@@ -263,6 +285,8 @@ class Controller():
         task model, forwards data to the data lake (with or without images
         depending on stage type), and updates calibration tab displays.
         """
+        start = time.perf_counter()
+
         for dev_name, dev_handle in self.deviceDictionary.items():
             try:
                 dev_handle.updateMeasuredValue()
@@ -272,6 +296,10 @@ class Controller():
             self.tabViewRun.displayMeasuredValueAndCheckForTolerance('-'+dev_name+'-', dev_handle)                    
             if self.taskModel.status == "RUNNING":
                 self.taskModel.dumpValue(dev_name, dev_handle.getMeasuredValue())
+            
+            print(f"{dev_name} took {time.perf_counter() - start:.6f}s")        
+            start = time.perf_counter()
+
 
         self.bronkhorstFlowControlModel.fetchAirFlow()
 
@@ -283,9 +311,10 @@ class Controller():
             else:
                 self.dataForwarder.pushDataToDataLake(images_included=False)
 
-        self.tabViewCalibLidar.updateLidarDisplay()
+        self.tabViewCalibLidar.updateLidarDisplay(fetch=False)
         self.tabViewCalibSensors.updateSensorOutputLabel()
         self.tabViewBronkhorstFlowControl.updateAirFlowLabel()
+
 
     def handleRunningStatus(self):
         """
@@ -338,7 +367,6 @@ class Controller():
             self.calib_cam_timer.start(self.configuration["camera tab timer"]) #ms        
         else:
             self.calib_cam_timer.stop()      
-
     def handleTaskModelStatusHasChanged(self):
         """
         Handle task model status changes.

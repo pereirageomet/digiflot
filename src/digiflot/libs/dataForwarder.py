@@ -223,14 +223,14 @@ class DataForwarder():
                 pass
         return ret
 
-    def fetchImageBytes(self):
+    def image_format(self):
         """
         Fetch the latest image bytes from the camera.
 
         Returns:
             bytes: The latest image data in TIFF format, or empty bytes if unavailable
         """
-        _, img_bytes = self.camInstance.getLatestImage(image_format= "TIFF")
+        _, img_bytes = self.camInstance.getLatestImage(image_format= "RAW")
         if img_bytes is None:
             img_bytes = b""
         return img_bytes

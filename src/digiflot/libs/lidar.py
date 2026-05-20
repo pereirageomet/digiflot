@@ -40,8 +40,6 @@ class Lidar(FormalHardwareInterface):
     def colorLIDAR(self):
         return self._colorLIDAR
 
-
-
     
     @showLIDAR.setter
     def showLIDAR(self, value):
@@ -50,20 +48,22 @@ class Lidar(FormalHardwareInterface):
     def colorLIDAR(self, value):
         self._colorLIDAR = value
 
-
     def getMeasuredValueFromLIDAR(self):
         if not self.connectedSuccessfully():
             return None
-
         self._ser.reset_input_buffer() # clear input buffer
-        time.sleep(self.measure_buffer_timer) #let the buffer fill
-        count = self._ser.in_waiting # count the number of received bytes in buffer
+
+        while self._ser.in_waiting < 9:
+            time.sleep(1e-3)
+
+        count = self._ser.in_waiting
         if count > 8:
             recv = self._ser.read(9)   
             if recv[0] == 0x59 and recv[1] == 0x59:
                 distance = recv[2] + recv[3] * 256
                 strength = recv[4] + recv[5] * 256
                 return distance
+
 
         logger.warning("Could not receive LiDAR data in time, consider increasing the measure buffer time.")
 
@@ -142,7 +142,6 @@ class Lidar(FormalHardwareInterface):
         return self.showLIDAR
 
     # Methods from formal interface
-
     def updateMeasuredValue(self):
         val = self.getMeasuredValueFromLIDAR()
         if val == 'none' or val is None:

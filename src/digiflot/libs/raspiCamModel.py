@@ -176,7 +176,8 @@ class RaspiCamModel():
                 self.last_fetched_image = np.frombuffer(self.image_array.get_obj(), dtype=np.uint8).reshape((int(m), int(n), int(o))).copy()
             return True, self.last_fetched_image
 
-    def getLatestImage(self, image_format="", scale_pct=100):
+
+    def getLatestImage(self, image_format="",scale = [None,None]):
         if not self.connectedSuccessfully():
             return False, None
 
@@ -184,16 +185,6 @@ class RaspiCamModel():
         
         if image is None:
             return False, self.last_fetched_image
-
-        # Downscale if requested
-        if scale_pct < 100:
-            target_w = max(1, round(self.imageWidth * scale_pct / 100))
-            target_h = max(1, round(self.imageHeight * scale_pct / 100))
-            image = cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
-
-        #if self.configuration["normalize image"]:
-        #    image = cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-        #cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         if image_format == "GRAY":
             imgbytes=cv2.imencode('.png', cv2.cvtColor(image, cv2.COLOR_RGB2GRAY))[1].tobytes()
         elif image_format == "HSV":
@@ -206,9 +197,14 @@ class RaspiCamModel():
             with io.BytesIO() as byte_buffer:
                 image_pil.save(byte_buffer, format="TIFF")
                 imgbytes = byte_buffer.getvalue()
+        elif image_format == "RAW":
+            return image_updated, image
+        elif image_format == "PREVIEW":
+             imgbytes = cv2.resize(image, (scale[0] or 640, scale[1] or 480), interpolation=cv2.INTER_AREA)
         else:
             imgbytes=cv2.imencode('.png', image)[1].tobytes()
         return image_updated, imgbytes
+        
 
     def getImageDictForSavingOffline(self):
         self.getLatestUnformattedImage()

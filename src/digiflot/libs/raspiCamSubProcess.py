@@ -49,7 +49,14 @@ def initCam(conf_dict, camera_index=0):
             }
         )
         picam2.start(config)
-        image = picam2.capture_array()
+
+        request = picam2.capture_request()
+        try:
+            image = np.array(request.make_array("main"), copy=True, order="C")
+        finally:
+            request.release()
+
+
         if image is None:
             raise Exception("Camera connected? Correct settings?")
     except Exception as e:
