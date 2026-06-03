@@ -139,7 +139,8 @@ def updateCamSettings(picam2, conf_dict, query_dict):
         picam2.set_controls(controls_dict)
 
 def takePicture(picam2, image_array, conf_dict, imageHeight, imageWidth, nof_pixel_values):
-    image = picam2.capture_array()
+    print("takePicture")
+    image = picam2.capture_array().copy()
     lock = image_array.get_lock()
     if lock.acquire(block=False):
         shared_image = np.frombuffer(image_array.get_obj(), dtype=np.uint8).reshape((imageHeight, imageWidth, nof_pixel_values))

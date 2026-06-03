@@ -173,11 +173,12 @@ class RaspiCamModel():
             m, n, o = self.getImageParameters()
             # then in each new process create a new numpy array using:
             with self.image_array.get_lock():
-                self.last_fetched_image = np.frombuffer(self.image_array.get_obj(), dtype=np.uint8).reshape((int(m), int(n), int(o))).copy()
+                self.last_fetched_image = np.frombuffer(self.image_array.get_obj(), dtype=np.uint8).reshape((int(m), int(n), int(o)))
             return True, self.last_fetched_image
 
 
     def getLatestImage(self, image_format="",scale = [None,None]):
+        "Nao acho que nenhuma conversao deveria ser realizada aq"
         if not self.connectedSuccessfully():
             return False, None
 

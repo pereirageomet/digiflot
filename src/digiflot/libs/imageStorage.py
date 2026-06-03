@@ -60,26 +60,32 @@ class ImageStorage:
 
     def _saveImage(self, dct):
         """Save a single image to disk.
-        
+
         Args:
             dct: Dictionary with image metadata and settings
         """
         try:
-            image = np.frombuffer(
-                self._cam_handle.image_array.get_obj(),
-                dtype=np.uint8
-            ).reshape(self._cam_handle.getImageParameters())
-            
+            print("pipi")
+            with self._cam_handle.image_array.get_lock():
+                image = np.frombuffer(
+                    self._cam_handle.image_array.get_obj(),
+                    dtype=np.uint8
+                ).reshape(self._cam_handle.getImageParameters()).copy()
+
+            dct = dict(dct)
             dct["image"] = image
-            # Build subfolder path: samplefolder/imgs/<camera_name>
+
             from pathlib import Path
+
             cam_name = dct.get("camera_name", "unknown")
             base_folder = Path(dct["samplefolder"]).expanduser()
             sub_folder = base_folder / "imgs" / cam_name
             sub_folder.mkdir(parents=True, exist_ok=True)
-            # replace samplefolder with the subfolder for storage
+
             dct["samplefolder"] = str(sub_folder)
+
             imageStorageSubProcess.storePicture(**dct)
+
         except Exception as e:
             logger.error(f"Failed to save image: {e}")
 
@@ -94,6 +100,7 @@ class ImageStorage:
 
     def saveImageOffline(self):
         """Queue an image for saving."""
+       
         if self.isRunning():
             dct = self._cam_handle.getImageDictForSavingOffline()
             try:
