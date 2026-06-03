@@ -276,7 +276,7 @@ class Controller():
         self.activateCalibrationTabs(True)
 
     
-    @timeit
+    #@timeit
     def handleFetchMeasurementEvent(self):
         """
         Handle periodic measurement fetch events.
