@@ -33,5 +33,5 @@ This project has been partially financed by the Federal Ministry of Research, Te
 If you use this open source project, please cite it in your work as:
 
 ```
-Pereira, L., Schmidt, C., Rudolph, M., 2025. DigiFlot: a modular laboratory assistant tailored for froth flotation experiments. https://doi.org/10.14278/rodare.3841
+Pereira, L., Hilgert, G., Schmidt, C., Rudolph, M., 2025. DigiFlot: a modular laboratory assistant tailored for froth flotation experiments. https://doi.org/10.14278/rodare.3841
 ```
