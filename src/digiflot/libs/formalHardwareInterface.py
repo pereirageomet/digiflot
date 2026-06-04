@@ -1,6 +1,8 @@
-# Describes abstract interface class that must be implemented by every hardware interface class
+
+
 import abc
 class FormalHardwareInterface(metaclass=abc.ABCMeta):
+    """Describes abstract interface class that must be implemented by every hardware interface class"""
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'updateMeasuredValue') and 

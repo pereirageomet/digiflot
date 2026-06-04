@@ -1,3 +1,4 @@
+"""Module docstring."""
 _eventDict = {} 
 
 def registerEvent(eventName, eventHandle):

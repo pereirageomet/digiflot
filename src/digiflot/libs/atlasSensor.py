@@ -6,19 +6,19 @@ except:
 
 class AtlasSensor():
     """
-    Manages connections to Atlas Scientific Sensors.
-    
-    This class provides methods to connect to the Atlas Scientific Sensors, to read a out specific values, 
-    and to query a calibration for a lower, upper, or intermediate calibration point.
-    
+    Manages connections to Atlas Scientific sensors for pH, EC, RTD, and ORP measurements.
+
+    This class provides methods to connect to the Atlas Scientific sensors, read specific measurement values,
+    and perform calibration queries for lower, upper, or intermediate calibration points.
+
     Attributes:
-        times_list (list): contains timeouts of the sensors
-        modules_list (list): contains name strings of the devices
-        device_list (list): contains handles of the devices
-        colorpH (string): encodes apparent color of the pH sensor on the setup tab
-        colorT (string): encodes apparent color of the temperature sensor on the setup tab
-        colorCond (string): encodes apparent color of the EC sensor on the setup tab
-        colorOR (string): encodes apparent color of the ORP sensor on the setup tab
+        _times_list (dict): Dictionary mapping sensor types to their timeout intervals
+        _modules_list (list): List of detected sensor module types (e.g., "pH", "EC", "RTD", "ORP")
+        _device_list (list): List of AtlasI2C device handle instances
+        _colorpH (str): Color indicator for pH sensor connection status ("green" if connected, "red" otherwise)
+        _colorT (str): Color indicator for temperature (RTD) sensor connection status
+        _colorCond (str): Color indicator for EC (conductivity) sensor connection status
+        _colorOR (str): Color indicator for ORP (oxidation-reduction potential) sensor connection status
     """
     
     def __init__(self):
@@ -34,74 +34,91 @@ class AtlasSensor():
 
     @property
     def device(self):
+        """Get the single device handle (deprecated, use device_list instead)."""
         return self._device
 
     @device.setter
     def device(self, value):
+        """Set the single device handle (deprecated, use device_list instead)."""
         self._device = value
 
     @property
     def times_list(self):
+        """Get the dictionary of sensor timeout intervals."""
         return self._times_list
 
     @times_list.setter
     def times_list(self, value):
+        """Set the dictionary of sensor timeout intervals."""
         self._times_list = value
 
     @property
     def modules_list(self):
+        """Get the list of detected sensor module types."""
         return self._modules_list
 
     @modules_list.setter
     def modules_list(self, value):
+        """Set the list of detected sensor module types."""
         self._modules_list = value
 
     @property
     def colorpH(self):
+        """Get the connection status indicator for pH sensor."""
         return self._colorpH
 
     @colorpH.setter
     def colorpH(self, value):
+        """Set the connection status indicator for pH sensor."""
         self._colorpH = value
 
     @property
     def colorT(self):
+        """Get the connection status indicator for temperature sensor."""
         return self._colorT
 
     @colorT.setter
     def colorT(self, value):
+        """Set the connection status indicator for temperature sensor."""
         self._colorT = value
 
     @property
     def colorCond(self):
+        """Get the connection status indicator for EC sensor."""
         return self._colorCond
 
     @colorCond.setter
     def colorCond(self, value):
+        """Set the connection status indicator for EC sensor."""
         self._colorCond = value
 
     @property
     def colorOR(self):
+        """Get the connection status indicator for ORP sensor."""
         return self._colorOR
 
     @colorOR.setter
     def colorOR(self, value):
+        """Set the connection status indicator for ORP sensor."""
         self._colorOR = value
 
     @property
     def device_list(self):
+        """Get the list of AtlasI2C device handle instances."""
         return self._device_list
 
     @device_list.setter
     def device_list(self, value):
+        """Set the list of AtlasI2C device handle instances."""
         self._device_list = value
 
     def connect_devices(self):
         """
-        Scans for and connects to Atlas Scientific sensors measuring pH, EC, RTD, and ORP.
+        Scan for and connect to Atlas Scientific sensors measuring pH, EC, RTD, and ORP.
 
         This method attempts to discover each of these sensor types in the environment
-        and establish a communication link for subsequent data retrieval.
+        and establish a communication link for subsequent data retrieval. It also initializes
+        measurement timeouts and visual status indicators for each connected sensor type.
 
         Returns:
             bool: True if at least one sensor was successfully connected, False otherwise.
@@ -160,21 +177,25 @@ class AtlasSensor():
 
     def connectedSuccessfully(self):
         """
-        Checks if the given connection has been established successfully.
+        Check if at least one Atlas Scientific sensor is successfully connected.
 
-        This function tests whether the provided connection object self.device is fully operational.
+        This method verifies that the device list is populated and at least one sensor type
+        (pH, EC, RTD, or ORP) has been detected and initialized successfully.
 
         Returns:
-            bool: True if the connection is successfully established to at least one of the Atlas Scientific sensors pH, EC, RTD, or ORP, False otherwise.
+            bool: True if at least one sensor is connected, False otherwise.
         """
         return len(self.device_list) > 0 and (self._colorpH == "green" or self._colorT == "green" or self._colorCond == "green" or self._colorOR == "green")
 
     def print_devices(self, MOD):
         """
-        Prints device information to the console.
+        Print device information to the console for a specific sensor type.
 
-        This function iterates over a list of device objects and prints
-        details provided by get_device_info.
+        This function iterates over the device list and prints details for the specified
+        sensor type, highlighting it with an arrow prefix.
+
+        Args:
+            MOD (str): The sensor module type to print (e.g., "pH", "EC", "RTD", "ORP").
 
         Returns:
             None: This function does not return a value; it simply prints
@@ -194,13 +215,14 @@ class AtlasSensor():
 
     def get_devices(self):
         """
-        Creates a full list of available device handles.
+        Create a full list of available device handles.
 
-        This method uses the AtlasI2C class to list the available i2c devices, and then creates 
-        instances of AtlasI2c class specificfor each moduletype, e.g. pH.
+        This method uses the AtlasI2C class to list available I2C devices, then creates
+        instances of AtlasI2C specifically for each detected module type (e.g., pH, EC, RTD, ORP).
 
         Returns:
-        device_list (object): A list of instances of AtlasI2C corresponding to the specific Atlas Scientific sensors.
+            list: A list of AtlasI2C instances corresponding to the detected Atlas Scientific sensors.
+                  Returns (None, []) if I2C functionality is not available.
         """
         if not AtlasI2C.FCNTL_AVAILABLE:
             return None, []
@@ -225,12 +247,15 @@ class AtlasSensor():
 
     def readOutValue(self, MOD):
         """
-        Reads out measurement values from sensor.
-        
-        Takes string MOD which contains the target measurement value and outputs the measured value.
+        Read the measurement value from a specific sensor type.
+
+        Takes a string MOD which specifies the target measurement value and returns the measured value.
+
+        Args:
+            MOD (str): The sensor module type to read from (e.g., "pH", "EC", "RTD", "ORP").
 
         Returns:
-            float: measured value
+            float: The measured value from the sensor.
         """
         ind = self.modules_list.index(MOD)
         dev = self.device_list[ind]
@@ -243,14 +268,14 @@ class AtlasSensor():
 
     def queryLowAverage(self, MOD, target):
         """
-        Query for setting the lower calibration point of the calibration curve for the device MOD
+        Query for setting the lower calibration point of the calibration curve.
 
         Args:
-            MOD (string): encodes the device, i.e. pH, EC, RTD, ORP
-            target (float): Setpoint value
+            MOD (str): The sensor module type (e.g., "pH", "EC", "RTD", "ORP").
+            target (float): The calibration setpoint value.
 
         Returns:
-            string: returned string from the query
+            str: The response string from the sensor query.
         """
         ind = self.modules_list.index(MOD)
         dev = self.device_list[ind]
@@ -259,14 +284,14 @@ class AtlasSensor():
 
     def queryMidAverage(self, MOD, target):
         """
-        Query for setting the middle calibration point of the calibration curve for the device MOD
+        Query for setting the middle calibration point of the calibration curve.
 
         Args:
-            MOD (string): encodes the device, i.e. pH, EC, RTD, ORP
-            target (float): Setpoint value
+            MOD (str): The sensor module type (e.g., "pH", "EC", "RTD", "ORP").
+            target (float): The calibration setpoint value.
 
         Returns:
-            string: returned string from the query
+            str: The response string from the sensor query.
         """
         ind = self.modules_list.index(MOD)
         dev = self.device_list[ind]
@@ -275,14 +300,14 @@ class AtlasSensor():
 
     def queryHighAverage(self, MOD, target):
         """
-        Query for setting the upper calibration point of the calibration curve for the device MOD
+        Query for setting the upper calibration point of the calibration curve.
 
         Args:
-            MOD (string): encodes the device, i.e. pH, EC, RTD, ORP
-            target (float): Setpoint value
+            MOD (str): The sensor module type (e.g., "pH", "EC", "RTD", "ORP").
+            target (float): The calibration setpoint value.
 
         Returns:
-            string: returned string from the query
+            str: The response string from the sensor query.
         """
         ind = self.modules_list.index(MOD)
         dev = self.device_list[ind]
@@ -291,14 +316,13 @@ class AtlasSensor():
     
     def queryClear(self, MOD):
         """
-        Query for setting the upper calibration point of the calibration curve for the device MOD
+        Query to clear the calibration for a specific sensor type.
 
         Args:
-            MOD (string): encodes the device, i.e. pH, EC, RTD, ORP
-            target (float): Setpoint value
+            MOD (str): The sensor module type (e.g., "pH", "EC", "RTD", "ORP").
 
         Returns:
-            string: returned string from the query
+            str: The response string from the sensor query.
         """
         ind = self.modules_list.index(MOD)
         dev = self.device_list[ind]
@@ -307,14 +331,13 @@ class AtlasSensor():
     
     def queryFactory(self, MOD):
         """
-        Query for setting the upper calibration point of the calibration curve for the device MOD
+        Query to reset the sensor to factory calibration settings.
 
         Args:
-            MOD (string): encodes the device, i.e. pH, EC, RTD, ORP
-            target (float): Setpoint value
+            MOD (str): The sensor module type (e.g., "pH", "EC", "RTD", "ORP").
 
         Returns:
-            string: returned string from the query
+            str: The response string from the sensor query.
         """
         ind = self.modules_list.index(MOD)
         dev = self.device_list[ind]

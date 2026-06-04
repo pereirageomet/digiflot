@@ -1,5 +1,12 @@
 """
-This is a module for handling process-shared dictionaries that contains configuration data for several classes.
+This module manages process-shared configuration dictionaries for the DigiFlot application.
+
+It provides a centralized configuration system using multiprocessing.Manager() to share
+configuration data across multiple processes safely. Configuration can be loaded from
+JSON files and defaults are provided for all supported components.
+
+The module supports dynamic configuration updates and ensures all default values
+are present in the shared configuration.
 """
 import json
 import time
@@ -15,17 +22,8 @@ def _get_default_config():
     """Return a dictionary with all default configuration values."""
     defaults = {
         "RaspiCamModel": {
-            "camera trademark": "Raspberry Pi",
-            "image interval": 1.0,
-            "exposure time": 20,
-            "gain": 20.0,
-            "normalize image": False,
-            "output raw image": False,
-            "image format": "tiff",
-            "brightness": 0.0,
-            "contrast": 1.0,
-            "saturation": 1.0,
-            "sharpness": 1.0,
+            "cameras": {},
+            "current_camera_index": 0
         },
         "DahengCamModel": {
             "camera trademark": "Daheng",
@@ -98,7 +96,13 @@ def _ensure_all_defaults_present():
 def initializeSharedConfiguration(path):
     """
     Initialize the shared configuration manager with default values.
-    Loads user configuration from JSON if available, otherwise stores defaults.
+
+    Creates a new Manager instance and populates shared_config with default values
+    for all supported components. If a configuration file exists at the given path,
+    it loads and merges user configuration with defaults.
+
+    Args:
+        path: Path object pointing to the configuration directory
     """
     global manager, shared_config, json_path
     json_path = path
@@ -119,6 +123,15 @@ def initializeSharedConfiguration(path):
         loadConfFromJsonRelentlessly()
 
 def updateSharedConfiguration(path):
+    """
+    Update the configuration path and reload configuration from the new location.
+
+    If the manager has been initialized, this function updates the json_path and
+    attempts to load configuration from the new location, storing defaults if not found.
+
+    Args:
+        path: Path object pointing to the new configuration directory
+    """
     global manager
     global shared_config
     global json_path
@@ -129,6 +142,16 @@ def updateSharedConfiguration(path):
         loadConfFromJsonRelentlessly()
 
 def tryToUpdateSharedConfiguration(path):
+    """
+    Attempt to update the configuration path and load configuration without error handling.
+
+    If the manager has been initialized, this function updates the json_path and
+    attempts to load configuration from the new location. Does not store defaults
+    if the configuration file is not found.
+
+    Args:
+        path: Path object pointing to the new configuration directory
+    """
     global manager
     global shared_config
     global json_path
@@ -139,15 +162,39 @@ def tryToUpdateSharedConfiguration(path):
         tryToLoadConfFromJson()
 
 def getConfig(key):
+    """Retrieve configuration dictionary for a given key.
+    Added helper ``get_shared_config_keys`` below to expose available top‑level keys.
+    """
     if key == "all":
         return shared_config
-    elif key in shared_config.keys():
+    elif shared_config is not None and key in shared_config.keys():
         return shared_config[key]
     else:
         logger.error(f"The key {key} passed to getConfig is not one of shared_config.")
         return None
 
+def get_shared_config_keys():
+    """Return list of top‑level keys in the shared configuration.
+    If the shared configuration has not been initialized yet, returns an empty list.
+    """
+    if shared_config is None:
+        return []
+    try:
+        return list(shared_config.keys())
+    except Exception:
+        logger.error("Failed to retrieve shared configuration keys.")
+        return []
+
 def convertSharedConfigtoSerializableDict():
+    """
+    Convert the shared configuration to a regular dictionary.
+
+    Converts all Manager.dict objects to regular Python dictionaries to enable
+    JSON serialization.
+
+    Returns:
+        dict: A serializable dictionary representation of the configuration
+    """
     global shared_config
     # Convert managed dictionaries to regular dictionaries
     dct = {}
@@ -156,15 +203,34 @@ def convertSharedConfigtoSerializableDict():
     return dct
 
 def storeToJson():
+    """
+    Store the current configuration to a JSON file.
+
+    Serializes the shared configuration to a JSON file named 'configuration.json'
+    in the configured json_path directory with 4-space indentation.
+    """
     global json_path
     with open(json_path/"configuration.json", "w") as file:
         json.dump(convertSharedConfigtoSerializableDict(), file, indent=4)
 
 def storeJsonToPath(json_path):
+    """
+    Store the current configuration to a JSON file at a specific path.
+
+    Args:
+        json_path: Path object specifying where to save the configuration file
+    """
     with open(json_path/"configuration.json", "w") as file:
         json.dump(convertSharedConfigtoSerializableDict(), file, indent=4)
 
 def storeConfToJsonRelentlessly():
+    """
+    Store configuration to JSON with retry logic.
+
+    Continuously attempts to write the configuration to disk, retrying every
+    0.1 seconds until successful. This ensures configuration persistence
+    even if the file is temporarily locked.
+    """
     success = False
     while not success:
         try:        
@@ -175,12 +241,26 @@ def storeConfToJsonRelentlessly():
             success = True
 
 def loadFromJson():
+    """
+    Load configuration from the JSON file.
+
+    Returns:
+        dict: The configuration dictionary loaded from 'configuration.json'
+    """
     global json_path
     with open(json_path/"configuration.json", "r") as file:
         dct = json.load(file)
     return dct
 
 def loadConfFromJsonRelentlessly():
+    """
+    Load configuration from JSON with retry logic and default fallback.
+
+    Attempts to load configuration from the JSON file. If the file doesn't exist,
+    generates defaults and saves them. Retries every 0.1 seconds on error until
+    successful. Merges loaded configuration with existing shared_config and
+    ensures all defaults are present.
+    """
     success = False
     while not success:
         try:        
@@ -209,6 +289,12 @@ def loadConfFromJsonRelentlessly():
             success = True  
 
 def tryToLoadConfFromJson():
+    """
+    Attempt to load configuration from JSON without error handling.
+
+    Loads configuration from the JSON file if it exists and merges it with
+    the existing shared_config. Does nothing if the file doesn't exist.
+    """
     try:        
         dct = loadFromJson()
     except FileNotFoundError:

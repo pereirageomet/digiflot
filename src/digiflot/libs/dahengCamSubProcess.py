@@ -1,3 +1,9 @@
+"""Module providing Daheng camera subprocess functionality.
+
+This module contains functions for initializing, configuring, and acquiring
+images from Daheng cameras in a separate process. It handles device management,
+image acquisition, and communication via multiprocessing queues.
+"""
 import logging
 logger = logging.getLogger(__name__)
 
@@ -10,8 +16,11 @@ import time
 import numpy as np
 
 def acq_mono(cam, conf_dict):
-    """
-        :brief      acquisition function of mono device
+    """Acquire a single mono image from the camera.
+
+    :param cam: Daheng camera device object
+    :param conf_dict: Configuration dictionary with image parameters
+    :return: Tuple of (success boolean, numpy image array or None)
     """
     # send software trigger command
     cam.TriggerSoftware.send_command()
@@ -48,6 +57,12 @@ def acq_mono(cam, conf_dict):
 
 #only applicable if stream is set to off
 def setWidth(cam, width):
+    """Set camera width, rounding to multiples of 8 within valid range.
+
+    :param cam: Daheng camera device object
+    :param width: Requested width in pixels
+    :return: Actual width set on the camera
+    """
     #round it to multiples of 8
     if width < 64:
         width = 64
@@ -61,6 +76,12 @@ def setWidth(cam, width):
 
 #only applicable if stream is set to off
 def setHeight(cam, height):
+    """Set camera height, rounding to multiples of 2 within valid range.
+
+    :param cam: Daheng camera device object
+    :param height: Requested height in pixels
+    :return: Actual height set on the camera
+    """
     #round it to multiples of 8
     if height < 4:
         height = 4
@@ -73,6 +94,11 @@ def setHeight(cam, height):
     return cam.Height.get()
 
 def initCam(conf_dict):
+    """Initialize the Daheng camera with given configuration.
+
+    :param conf_dict: Configuration dictionary with exposure, gain, and dimensions
+    :return: Tuple of (deviceManager, camera, status dict) or (None, None, error dict)
+    """
 #Picture variables
     # create a device manager
     deviceManager = gx.DeviceManager()
@@ -110,6 +136,10 @@ def initCam(conf_dict):
 
 
 def adjustWidthAndHeightForAspectRatio(conf_dict):
+    """Adjust image width and height to match camera's 4:3 aspect ratio.
+
+    :param conf_dict: Configuration dictionary with query dimensions
+    """
     NimgH = conf_dict["imgH_query"]
     NimgW =conf_dict["imgW_query"]
 
@@ -129,6 +159,12 @@ def adjustWidthAndHeightForAspectRatio(conf_dict):
 
 #limits for inputs are still missing
 def updateCamSettings(cam, conf_dict, query_dict):
+    """Update camera settings if values have changed from the query dictionary.
+
+    :param cam: Daheng camera device object
+    :param conf_dict: Current configuration dictionary
+    :param query_dict: Dictionary with new settings to apply
+    """
     #load the following parameters only in query parameters for subsequent case control
     gain = query_dict["gain_query"]
     exposure_time = query_dict["exposureTime_query"]
@@ -175,6 +211,15 @@ def updateCamSettings(cam, conf_dict, query_dict):
         conf_dict["exposureTime"] = conf_dict["exposureTime_query"]
 
 def takePicture(cam, image_array, conf_dict, imageHeight, imageWidth, nof_pixel_values):
+    """Capture an image and store it in a shared memory array.
+
+    :param cam: Daheng camera device object
+    :param image_array: Shared memory array for image storage
+    :param conf_dict: Configuration dictionary
+    :param imageHeight: Height of the image in pixels
+    :param imageWidth: Width of the image in pixels
+    :param nof_pixel_values: Number of color channels (1 for mono)
+    """
     image = acq_mono(cam, conf_dict) 
     lock = image_array.get_lock()
     # if another access occurs
@@ -185,6 +230,15 @@ def takePicture(cam, image_array, conf_dict, imageHeight, imageWidth, nof_pixel_
         lock.release()
 
 def evaluateRequest(message_queue, cam, conf_dict, streaming_enabled, has_finished):
+    """Process messages from the queue to control streaming and camera settings.
+
+    :param message_queue: Queue for receiving control messages
+    :param cam: Daheng camera device object
+    :param conf_dict: Configuration dictionary
+    :param streaming_enabled: Current streaming state
+    :param has_finished: Flag indicating if the process should finish
+    :return: Tuple of (updated streaming_enabled, updated has_finished)
+    """
     #Default case
     if message_queue.empty():
         #print("no message!?")
@@ -211,6 +265,15 @@ def evaluateRequest(message_queue, cam, conf_dict, streaming_enabled, has_finish
         return streaming_enabled, has_finished
 
 def startImageAquisitionLoop(conf_dict, message_queue, image_array, imageHeight, imageWidth, nof_pixel_values):
+    """Main loop for continuous image acquisition in a subprocess.
+
+    :param conf_dict: Configuration dictionary with acquisition parameters
+    :param message_queue: Queue for receiving control messages
+    :param image_array: Shared memory array for storing images
+    :param imageHeight: Height of acquired images
+    :param imageWidth: Width of acquired images
+    :param nof_pixel_values: Number of color channels
+    """
     deviceManger, cam, ret_dct = initCam(conf_dict)
     message_queue.put(ret_dct)
     
@@ -236,6 +299,11 @@ def startImageAquisitionLoop(conf_dict, message_queue, image_array, imageHeight,
     closeQueue(message_queue, "CLOSE_MESSAGE_QUEUE")
 
 def closeQueue(queue, sentinel_message):
+    """Close a multiprocessing queue and join its thread.
+
+    :param queue: Queue to close
+    :param sentinel_message: Message sentinel to stop draining the queue
+    """
     message = None
     ts = time.time()
     #while not message_queue.empty():
@@ -251,6 +319,7 @@ def closeQueue(queue, sentinel_message):
 
 #for testing locally
 def main():
+    """Entry point for testing the subprocess module."""
     import multiprocessing as mp
     queue = mp.Queue()
     queue2 = mp.Queue()

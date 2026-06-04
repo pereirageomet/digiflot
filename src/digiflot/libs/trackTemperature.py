@@ -1,3 +1,4 @@
+"""Module docstring."""
 import time
 import subprocess
 import platform

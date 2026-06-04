@@ -1,3 +1,4 @@
+"""Module docstring."""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout, QMessageBox, QSizePolicy, QGroupBox)
 from PyQt5.QtCore import Qt
 
@@ -289,7 +290,7 @@ class TabViewRun(QWidget):
             # self.next_stage_label.setText(self.taskModel.scheme.loc[self.taskModel.currentstage + 1, "Stage"])
 
     def startClicked(self):
-        if self.taskModel.checkIfTargetPhIsSet:
+        if self.taskModel.checkIfTargetPhIsSet():
             self.taskModel.initializeMeasurement()
             self.displayRunningStatus()
         else:

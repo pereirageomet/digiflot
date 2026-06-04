@@ -1,3 +1,4 @@
+"""Module docstring."""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QApplication, QProgressDialog, QSizePolicy)
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QTimer
@@ -79,15 +80,20 @@ class TabViewCalibLidar(QWidget):
     def set_Window(self, window):
         self.window = window
 
-    def updateLidarDisplay(self):
-        measuredLIDAR = self.lidar.updateMeasuredValue()
-        self.live_distance_value.setText(str(measuredLIDAR))
+    def updateLidarDisplay(self,fetch=True):
+
+        if fetch: # Was updating the lidar twice per cycle (see controller.py handleFetchMeasurementEvent)
+            measuredLIDAR = self.lidar.updateMeasuredValue()
+        else:
+            measuredLIDAR = self.lidar.getMeasuredValue()
         if self.lidar.valueInTolerance():
             self.defined_level_value.setStyleSheet("color: green;")
             self.live_distance_value.setStyleSheet("color: green;")
         else:
             self.defined_level_value.setStyleSheet("color: red;")
             self.live_distance_value.setStyleSheet("color: red;")
+            
+        self.live_distance_value.setText(str(measuredLIDAR))
 
     def definePulpLevel(self):
         nmeasurements = 30

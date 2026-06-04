@@ -1,3 +1,4 @@
+"""Module docstring."""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QFormLayout, QGroupBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox)
 
 try:

@@ -1,3 +1,11 @@
+"""
+Controller module for the Digiflot process monitoring system.
+
+This module provides the central Controller class that manages the interaction
+between all hardware components (cameras, sensors, flow controllers), the task model,
+and the UI tabs. It handles data acquisition timing, stage transitions, and system
+state management.
+"""
 import time
 import logging
 logger = logging.getLogger(__name__)
@@ -10,13 +18,55 @@ try:
     from libs import eventManager
     ##ConfigurationManager
     from libs import configurationManager  
+
+    from libs.devTools import *
 except:
     from . import vlcBeepAndSkim
     from . import eventManager
     ##ConfigurationManager
     from . import configurationManager  
+
+
+
+
+
+
+
+
+
 class Controller():
-    def __init__(self, tabWidget, camAdapter, atlasSensor, lidar, bronkhorstFlowControlModel, taskModel, deviceDictionary, tabViewSetup, tabViewRun, tabViewInformation, tabViewRestartExit, tabViewCalibCam, tabViewCalibLidar, tabViewCalibSensors, tabViewBronkhorstFlowControl, imageStorage, dataForwarder): #sewControl,  removed due to issues
+    """
+    Central controller managing hardware components and process state.
+
+    This class acts as the central coordination point between all hardware interfaces,
+    the task model (process flow), and UI tab views. It manages timing for data
+    acquisition, handles stage transitions, and coordinates the flow of the
+    flotation experiment.
+
+    Attributes:
+        configuration: Controller configuration from shared configuration
+        tabWidget: Main window tab widget for UI navigation
+        camAdapter: Camera adapter instance for image acquisition
+        atlasSensor: Atlas sensor interface for pH, EC, RTD, ORP measurements
+        lidar: LIDAR sensor interface for pulp level measurement
+        bronkhorstFlowControlModel: Bronkhorst flow controller interface
+        taskModel: Process task model managing stages and timing
+        deviceDictionary: Dictionary mapping device names to device handles
+        tabViewSetup: Setup tab view instance
+        tabViewRun: Run tab view instance
+        tabViewInformation: Information tab view instance
+        tabViewRestartExit: Restart/Exit tab view instance
+        tabViewCalibCam: Camera calibration tab view instance
+        tabViewCalibLidar: LIDAR calibration tab view instance
+        tabViewCalibSensors: Sensor calibration tab view instance
+        tabViewBronkhorstFlowControl: Flow control tab view instance
+        imageStorage: Offline image storage manager
+        dataForwarder: Online data forwarding manager
+        run_timer: Timer for running status updates
+        fetch_measurement_timer: Timer for periodic measurement collection
+        calib_cam_timer: Timer for camera calibration updates
+    """
+    def __init__(self, tabWidget, camAdapter, atlasSensor, lidar, bronkhorstFlowControlModel, taskModel, deviceDictionary, tabViewSetup, tabViewRun, tabViewInformation, tabViewRestartExit, tabViewCalibCam, tabViewCalibLidar, tabViewCalibSensors, tabViewBronkhorstFlowControl, imageStorages, dataForwarder): #sewControl,  removed due to issues
         self.configuration = configurationManager.getConfig("Controller")
         #mainWindow in the role of a tabWidget
         self.tabWidget = tabWidget        
@@ -40,15 +90,17 @@ class Controller():
         self.tabViewCalibSensors = tabViewCalibSensors
         self.tabViewBronkhorstFlowControl = tabViewBronkhorstFlowControl
         #offline acquisition
-        self.imageStorage = imageStorage        
+        self.imageStorages = imageStorages        
         #online acquisition
         self.dataForwarder = dataForwarder
-        #Timing objects
+
+        #!Timing objects
         self.run_timer = QTimer()
         self.run_timer.timeout.connect(self.handleRunningStatus)
         self.fetch_measurement_timer = QTimer()
         self.fetch_measurement_timer.timeout.connect(self.handleFetchMeasurementEvent)
         self.fetch_measurement_timer.start(self.configuration["measurement timer"]) #ms
+
         self.calib_cam_timer = QTimer()
         self.calib_cam_timer.timeout.connect(self.handleUpdateCalibCamEvent)                        
 
@@ -65,6 +117,12 @@ class Controller():
         eventManager.connectToEvent("exportButtonClicked", self.handleExportInformationEvent)        
 
     def showWarningPopup(self, msg):
+        """
+        Display a warning message popup to the user.
+
+        Args:
+            msg (str): The warning message to display
+        """
         msg_box = QMessageBox()
         msg_box.setText(msg)
         msg_box.setWindowTitle("Warning")
@@ -72,22 +130,42 @@ class Controller():
         msg_box.exec_()
 
     def handleOkButtonPressed(self):
+        """
+        Handle OK button click to start a new measurement run.
+
+        Loads the selected sample, creates the sample folder, and initializes
+        the measurement run by updating UI visibility and displaying measurement
+        parameters.
+        """
         currentRowIndex = self.tabViewSetup.sampleList.currentRow()
-        self.taskModel.selectedSample = self.tabViewSetup.sampleList.item(currentRowIndex).text()
-        msg = self.taskModel.tryToLoadSchemeSampleAndCreateSampleFolder()
+
+        self.taskModel.selectedSample = self.tabViewSetup.sampleList.item(currentRowIndex)
+
+        if self.taskModel.selectedSample is None: # Check if there is an input first
+            msg = "Please select the test sample from the working directory."
+        else: 
+            self.taskModel.selectedSample = self.taskModel.selectedSample.text()
+            msg = self.taskModel.tryToLoadSchemeSampleAndCreateSampleFolder()
         if msg is not None:
             logger.warning(msg)
             self.showWarningPopup(msg)
-        else:
-            #No error msg => Display
-            self.taskModel.markStart()
-            self.tabWidget.setTabVisible(1, True)
-            self.tabViewSetup.okButton.setEnabled(False)     
-            self.tabViewSetup.displaySampleScheme()
-            self.tabViewRun.displayMeasurementParameters()
-            self.tabViewInformation.reloadTablesForNewSetup()
+            return
+
+        #No error msg => Display
+        self.taskModel.markStart()
+        self.tabWidget.setTabVisible(1, True)
+        self.tabViewSetup.okButton.setEnabled(False)     
+        self.tabViewSetup.displaySampleScheme()
+        self.tabViewRun.displayMeasurementParameters()
+        self.tabViewInformation.reloadTablesForNewSetup()
 
     def handleWorkingFolderButtonClicked(self):
+        """
+        Handle working folder button click to set the working directory.
+
+        Updates the working folder configuration, resets calibration tabs,
+        and updates the run tab display with target times and stages.
+        """
         #Issue: Reset of runTask at this point?
         self.tabViewSetup.workingFolderButtonClicked()
         self.tabViewRun.displayTargetTimeAndStages()
@@ -97,16 +175,34 @@ class Controller():
         self.tabViewCalibCam.resetTabWidgets()
 
     def handleStartButtonClicked(self):
+        """
+        Handle start button click to begin the measurement run.
+
+        Triggers the run tab start action and disables calibration tabs.
+        """
+        self.activateCalibrationTabs(False) #deactivate tabs before running
         self.tabViewRun.startClicked()
-        self.activateCalibrationTabs(False)
 
     def handlePauseButtonClicked(self):
+        """
+        Handle pause button click to pause the current measurement stage.
+
+        Updates task model status to PAUSED, adjusts time tracking, updates
+        the run tab UI, and interrupts any audio prompts.
+        """
         self.taskModel.status = "PAUSED"
         self.taskModel.adjustForTimeSpentInCurrentStage()
         self.tabViewRun.updateToPausedStatus()
         vlcBeepAndSkim.interruptSkim()
 
     def handleNextStageButtonClicked(self):
+        """
+        Handle next stage button click to advance to the next measurement stage.
+
+        Shows confirmation dialog before proceeding. If confirmed, pauses the
+        current stage, advances to the next stage in the run scheme, and updates
+        the run tab display.
+        """
         response = QMessageBox.question(None, 'Confirmation', 'Are you sure?',
                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if response == QMessageBox.Yes:
@@ -116,6 +212,13 @@ class Controller():
             self.tabViewRun.updateWholeRunTabToCurrentStage()                
 
     def handlePreviousStageButtonClicked(self):
+        """
+        Handle previous stage button click to return to the previous measurement stage.
+
+        Shows confirmation dialog before proceeding. If confirmed, pauses the
+        current stage, moves to the previous stage in the run scheme, and updates
+        the run tab display.
+        """
         response = QMessageBox.question(None, 'Confirmation', 'Are you sure?',
                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if response == QMessageBox.Yes:            
@@ -125,33 +228,39 @@ class Controller():
             self.tabViewRun.updateWholeRunTabToCurrentStage()
 
     def handleRestartButtonClicked(self):
+        """
+        Handle restart button click to restart the current sample measurement.
+
+        Shows confirmation dialog before proceeding. If confirmed, performs a
+        restart operation that reloads sample data and resets the run state.
+        """
         response = QMessageBox.question(None, 'Confirmation', 'Move on to the next run?',
                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
         if response == QMessageBox.StandardButton.Yes:            
             self.performRestart()
 
     def performRestart(self):
-        # Restart reloads samples.csv, but stores the previously selected sample. The scheme.csv is not reloaded. It also does not clear the data of the info tab.
+        """
+        Perform the restart operation for the current sample.
+
+        Reloads samples.csv, resets timing, updates UI visibility, resets
+        skim and beep handling, and resets LIDAR pulp level measurement.
+        """
         self.taskModel.status = "PAUSED"
-        #Stop all timers linked to the running status
         self.run_timer.stop()
         self.tabViewRun.updateToPausedStatus()
         self.taskModel.moveToFirstStage()
         self.tabViewRun.updateWholeRunTabToCurrentStage()
         
-        #Reload samples.csv and display it
         msg = self.taskModel.tryToLoadSampleFile()
         if msg is not None:
             logger.warning(msg)
             self.showWarningPopup(msg)
         self.tabViewSetup.displaySchemeAndSamplenames()
 
-        #bring back the okButton
         self.tabViewSetup.okButton.setEnabled(True)        
-        #reset information tab
         self.tabViewInformation.resetInformationTab()
 
-        #move to setup tab and show all the others except for the run tab
         self.tabWidget.setCurrentIndex(0)
         for index in range(self.tabWidget.count()):
             if self.tabWidget.tabText(index) != "Run":
@@ -159,29 +268,25 @@ class Controller():
             else:
                 self.tabWidget.setTabVisible(index, False)
 
-        #Reset skim and beep handling
         vlcBeepAndSkim.interruptSkim()
         vlcBeepAndSkim.resetSkimAndBeep()
 
-        #Reset pulp level
         self.lidar.pulp = 0
 
-        # Bring back the tabs for the cam and the lidar
         self.activateCalibrationTabs(True)
 
-    def activateCalibrationTabs(self, enabled):
-            try:
-                self.tabWidget.setTabEnabled(5, enabled)
-            except:
-                logger.error("Tab with index 5 does not exist.")
-            else:
-                try:
-                    self.tabWidget.setTabEnabled(6, enabled)
-                except:
-                    logger.error(f"Tab with index 6 does not exist. Last defined tab is {self.tabWidget.tabText(5)}.")
-
+    
+    #@timeit
     def handleFetchMeasurementEvent(self):
-        ###DATA COLLECTON
+        """
+        Handle periodic measurement fetch events.
+
+        Collects measurements from all connected devices, stores data in the
+        task model, forwards data to the data lake (with or without images
+        depending on stage type), and updates calibration tab displays.
+        """
+        start = time.perf_counter()
+
         for dev_name, dev_handle in self.deviceDictionary.items():
             try:
                 dev_handle.updateMeasuredValue()
@@ -191,41 +296,42 @@ class Controller():
             self.tabViewRun.displayMeasuredValueAndCheckForTolerance('-'+dev_name+'-', dev_handle)                    
             if self.taskModel.status == "RUNNING":
                 self.taskModel.dumpValue(dev_name, dev_handle.getMeasuredValue())
+            
+            print(f"{dev_name} took {time.perf_counter() - start:.6f}s")        
+            start = time.perf_counter()
 
-        # fetch value from Bronkhorst
+
         self.bronkhorstFlowControlModel.fetchAirFlow()
 
-        # fetch value from Bronkhorst
-        # self.sewControl.fetchRotorSpeed()  # removed for now
-
-        # data storage
         if self.taskModel.status == "RUNNING":
             if self.taskModel.currentstagetype == 'Flotation':
-                #Store last fetched image locally if stagetype is Flotation
-                self.imageStorage.saveImageOffline()
-                #Push data to datalake with image included
+                for stor in self.imageStorages:
+                    stor.saveImageOffline()
                 self.dataForwarder.pushDataToDataLake(images_included=True)
             else:
-                #Push data to datalake without any images
                 self.dataForwarder.pushDataToDataLake(images_included=False)
 
-        # update display of values (refresh of camera tab is handled by timer)
-        self.tabViewCalibLidar.updateLidarDisplay()
+        self.tabViewCalibLidar.updateLidarDisplay(fetch=False)
         self.tabViewCalibSensors.updateSensorOutputLabel()
         self.tabViewBronkhorstFlowControl.updateAirFlowLabel()
 
+
     def handleRunningStatus(self):
-        #Clocking the time spent in current stage
+        """
+        Handle running status timer events.
+
+        Updates time spent in current stage, calculates remaining time, triggers
+        audio/scraping for flotation stages, and handles automatic stage transitions
+        when time expires.
+        """
         self.taskModel.updateTimeSpentInCurrentStage()
         remainingTimeInStage = self.taskModel.calculateRemainingTimeInCurrentStage()
         self.tabViewRun.displayRemainingTime(remainingTimeInStage, beepFlag=True)
 
-        #Clocking the time spent in stage flotation 
         if (self.taskModel.currentstagetype == 'Flotation'):
             self.taskModel.flotationtime = time.time() - self.taskModel.t1flot + self.taskModel.t2flot
             vlcBeepAndSkim.skimOnce(targett= int(self.taskModel.targett),scrapingFreq=5)
 
-        #What to do when time in current stage is used up 
         if remainingTimeInStage <= 0.0:
             if (self.taskModel.currentstage + 1) <= self.taskModel.nstages:
                 self.taskModel.moveToNextStage()
@@ -241,24 +347,33 @@ class Controller():
                 self.taskModel.updateSamplesFile()
                 self.tabViewRun.displayMeasurementCompleted()
                 vlcBeepAndSkim.playFinish()
-                #store config to samplefolder
                 try:
                     configurationManager.storeJsonToPath(self.taskModel.samplefolder)
                 except:
                     logger.error(f"Could not write to {str(self.taskModel.samplefolder/'configuration.json')}, probably because the file was in use or the sample folder not existent.")            
-                #move to information tab and hide all the others
                 self.tabWidget.setCurrentIndex(2)
                 for index in range(self.tabWidget.count()):
                     if self.tabWidget.tabText(index) != "Information":
                         self.tabWidget.setTabVisible(index, False)
 
     def handleTabHasChanged(self, index):
+        """
+        Handle tab change events for camera calibration updates.
+
+        Args:
+            index (int): Index of the newly selected tab
+        """
         if self.tabWidget.tabText(index) == "Calibrate camera":
             self.calib_cam_timer.start(self.configuration["camera tab timer"]) #ms        
         else:
             self.calib_cam_timer.stop()      
-
     def handleTaskModelStatusHasChanged(self):
+        """
+        Handle task model status changes.
+
+        Starts or stops the running timer based on task status and sets or
+        clears the air flow setpoint on the Bronkhorst controller.
+        """
         if self.taskModel.status == "RUNNING":
             self.run_timer.start(self.configuration["run tab timer"]) #ms
             target_air_flow = self.taskModel.getTargetAirFlowRate()
@@ -268,10 +383,35 @@ class Controller():
             self.bronkhorstFlowControlModel.setAirFlow(0.0)
 
     def handleUpdateCalibCamEvent(self):
+        """
+        Handle camera calibration image update events.
+
+        Requests the current calibration image from the camera and updates
+        the calibration tab display.
+        """
         self.tabViewCalibCam.updateCalibCamImage()
 
     def handleExportInformationEvent(self):
+        """
+        Handle export information button click.
+
+        Attempts to export information data. If successful and the run has
+        completed, automatically performs a restart operation.
+        """
         success = self.tabViewInformation.exportInformation()
-        # Restart if export information button has been successfully used after successfull run
         if success and self.taskModel.status == "Completed":
             self.performRestart()
+
+
+    def activateCalibrationTabs(self, enabled):
+            try:
+                self.tabWidget.setTabEnabled(5, enabled)
+            except:
+                logger.error("Tab with index 5 does not exist.")
+            else:
+                try:
+                    self.tabWidget.setTabEnabled(6, enabled)
+                except:
+                    logger.error(f"Tab with index 6 does not exist. Last defined tab is {self.tabWidget.tabText(5)}.")
+
+            

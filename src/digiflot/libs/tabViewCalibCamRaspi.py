@@ -1,18 +1,48 @@
+"""Module providing the calibration UI widget for Raspberry Pi cameras.
+
+This module defines the TabViewCalibCamRaspi class, a QWidget that displays
+live camera feed and controls for image acquisition settings (gain, exposure,
+brightness, etc.) and supports multi‑camera selection via a dropdown.
+"""
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox, QGroupBox, QLineEdit, QSizePolicy)
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap,QImage
 import logging
+from . import configurationManager
 logger = logging.getLogger(__name__)
 
-class TabViewCalibCamRaspi(QWidget):
-    def __init__(self, raspiCamModel):
-        super().__init__()
 
-        self.raspiCamModel = raspiCamModel
+class TabViewCalibCamRaspi(QWidget):
+    from . import configurationManager
+    """Calibration tab for Raspberry Pi cameras with multi‑camera selector."""
+    def __init__(self, camAdapter):
+        super().__init__()
+        self.camAdapter = camAdapter  # holds list of RaspiCamModel instances
+        self._active_index = 0  # track active camera index locally
         self.initUI()
 
+
     def initUI(self):
-        # Create main layout
+        """Initialize the user interface layout and widgets."""
         mainLayout = QHBoxLayout()
+        # Camera selector and name edit (always shown, even for a single cam)
+        selectorLayout = QVBoxLayout()
+        if len(self.camAdapter._cam_handles) > 1:
+            selectorLabel = QLabel("Select Camera")
+            self.camera_selector = QComboBox()
+            for idx, _ in enumerate(self.camAdapter._cam_handles):
+                self.camera_selector.addItem(f"Camera {idx}")
+            self.camera_selector.setCurrentIndex(self._active_index)
+            self.camera_selector.currentIndexChanged.connect(self.changeCamera)
+            selectorLayout.addWidget(selectorLabel)
+            selectorLayout.addWidget(self.camera_selector)
+        # Camera name edit (always present)
+        self.camera_name_edit = QLineEdit()
+        self.camera_name_edit.setPlaceholderText("Camera name")
+        current_cam = self.camAdapter._cam_handles[self._active_index]
+        self.camera_name_edit.setText(current_cam.camera_config.get("name", f"Camera_{self._active_index}"))
+        self.camera_name_edit.editingFinished.connect(self.changeCameraName)
+        selectorLayout.addWidget(self.camera_name_edit)
+        mainLayout.addLayout(selectorLayout)
 
         # Column for image calibration
         imageCalibLayout = QVBoxLayout()
@@ -28,6 +58,18 @@ class TabViewCalibCamRaspi(QWidget):
         color_space_layout.addWidget(self.color_space_combo)
         color_space_group.setLayout(color_space_layout)
         imageCalibLayout.addWidget(color_space_group)
+        
+        resolution_group = QGroupBox("Camera Resolution")
+        resolution_layout = QVBoxLayout()
+        self.resolution_combo = QComboBox()
+        self.resolution_combo.addItems(["25%", "33%", "50%", "75%", "100%"])
+        self.resolution_combo.setCurrentIndex(1)
+        self._resolution_pct = 33
+        self.resolution_combo.currentIndexChanged.connect(self.handleResolutionChanged)
+        resolution_layout.addWidget(self.resolution_combo)
+        resolution_group.setLayout(resolution_layout)
+        imageCalibLayout.addWidget(resolution_group)
+        
         imageCalibLayout.addStretch()
         
         # Column for image settings
@@ -62,7 +104,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.interval_spin = QDoubleSpinBox()
         self.interval_spin.setRange(0.01, 2.0)
         self.interval_spin.setSingleStep(0.1)
-        self.interval_spin.setValue(self.raspiCamModel.get_intervalbild()) 
+        self.interval_spin.setValue(self.camAdapter._cam_handles[self._active_index].get_intervalbild()) 
         self.interval_unit_label = QLabel("s")
         interval_layout.addWidget(self.interval_label)
         interval_layout.addWidget(self.interval_spin)
@@ -70,12 +112,12 @@ class TabViewCalibCamRaspi(QWidget):
         imageSettingsLayout.addLayout(interval_layout)
         
         self.save_raw_checkbox = QCheckBox("Save raw image?")
-        self.save_raw_checkbox.setChecked(self.raspiCamModel.get_imgRaw())
+        self.save_raw_checkbox.setChecked(self.camAdapter._cam_handles[self._active_index].get_imgRaw())
         self.save_raw_checkbox.stateChanged.connect(self.handleSaveRawCheckboxStateChanged)        
         imageSettingsLayout.addWidget(self.save_raw_checkbox)
         
         self.normalize_checkbox = QCheckBox("Normalize image?")
-        self.normalize_checkbox.setChecked(self.raspiCamModel.get_imgNorm())
+        self.normalize_checkbox.setChecked(self.camAdapter._cam_handles[self._active_index].get_imgNorm())
         self.normalize_checkbox.stateChanged.connect(self.handleNormalizeCheckboxStateChanged)
         self.normalize_checkbox.setVisible(False)
         imageSettingsLayout.addWidget(self.normalize_checkbox)
@@ -85,7 +127,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.gain_spin = QDoubleSpinBox()
         self.gain_spin.setRange(1.0, 22.0)
         self.gain_spin.setSingleStep(0.1)
-        self.gain_spin.setValue(self.raspiCamModel.get_gain()) 
+        self.gain_spin.setValue(self.camAdapter._cam_handles[self._active_index].get_gain()) 
         gain_layout.addWidget(self.gain_label)
         gain_layout.addWidget(self.gain_spin)
         imageSettingsLayout.addLayout(gain_layout)
@@ -95,7 +137,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.exposure_time_spin = QDoubleSpinBox()
         self.exposure_time_spin.setRange(0.06, 10000.0)
         self.exposure_time_spin.setSingleStep(10.0)
-        self.exposure_time_spin.setValue(self.raspiCamModel.get_exposureTime()) 
+        self.exposure_time_spin.setValue(self.camAdapter._cam_handles[self._active_index].get_exposureTime()) 
         self.exposure_time_unit_label = QLabel("ms")
         exposure_time_layout.addWidget(self.exposure_time_label)
         exposure_time_layout.addWidget(self.exposure_time_spin)
@@ -107,7 +149,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.brightness_spin = QDoubleSpinBox()
         self.brightness_spin.setRange(-1, 1)
         self.brightness_spin.setSingleStep(0.1)
-        self.brightness_spin.setValue(self.raspiCamModel.get_imgB())
+        self.brightness_spin.setValue(self.camAdapter._cam_handles[self._active_index].get_imgB())
         brightness_layout.addWidget(self.brightness_label)
         brightness_layout.addWidget(self.brightness_spin)
         brightness_layout.addWidget(QLabel("[-1:1]"))
@@ -117,7 +159,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.contrast_label = QLabel("Image contrast")
         self.contrast_spin = QSpinBox()
         self.contrast_spin.setRange(0, 32)
-        self.contrast_spin.setValue(int(self.raspiCamModel.get_imgC()))
+        self.contrast_spin.setValue(int(self.camAdapter._cam_handles[self._active_index].get_imgC()))
         contrast_layout.addWidget(self.contrast_label)
         contrast_layout.addWidget(self.contrast_spin)
         contrast_layout.addWidget(QLabel("[0:32]"))
@@ -127,7 +169,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.saturation_label = QLabel("Image saturation")
         self.saturation_spin = QSpinBox()
         self.saturation_spin.setRange(0, 32)
-        self.saturation_spin.setValue(int(self.raspiCamModel.get_imgS()))
+        self.saturation_spin.setValue(int(self.camAdapter._cam_handles[self._active_index].get_imgS()))
         saturation_layout.addWidget(self.saturation_label)
         saturation_layout.addWidget(self.saturation_spin)
         saturation_layout.addWidget(QLabel("[0:32]"))
@@ -137,7 +179,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.sharpness_label = QLabel("Image sharpness")
         self.sharpness_spin = QSpinBox()
         self.sharpness_spin.setRange(0, 16)
-        self.sharpness_spin.setValue(int(self.raspiCamModel.get_imageSharpness()))
+        self.sharpness_spin.setValue(int(self.camAdapter._cam_handles[self._active_index].get_imageSharpness()))
         sharpness_layout.addWidget(self.sharpness_label)
         sharpness_layout.addWidget(self.sharpness_spin)
         sharpness_layout.addWidget(QLabel("[0:16]"))
@@ -152,28 +194,67 @@ class TabViewCalibCamRaspi(QWidget):
         self.setLayout(mainLayout)
 
     def resetTabWidgets(self):
+        """Reset UI widgets and keep camera name in sync."""
+        cam = self.camAdapter._cam_handles[self._active_index]
+        # synchronize name edit
+        self.camera_name_edit.setText(cam.camera_config.get("name", f"Camera_{self._active_index}"))
+        """Reset all UI widget values to match the active camera's current settings."""
+        cam = self.camAdapter._cam_handles[self._active_index]
         # Column for image settings
-        self.interval_spin.setValue(self.raspiCamModel.get_intervalbild()) 
-        self.save_raw_checkbox.setChecked(self.raspiCamModel.get_imgRaw())
-        self.normalize_checkbox.setChecked(self.raspiCamModel.get_imgNorm())
-        self.gain_spin.setValue(self.raspiCamModel.get_gain()) 
-        self.exposure_time_spin.setValue(self.raspiCamModel.get_exposureTime()) 
-        self.brightness_spin.setValue(self.raspiCamModel.get_imgB())
-        self.contrast_spin.setValue(int(self.raspiCamModel.get_imgC()))
-        self.saturation_spin.setValue(int(self.raspiCamModel.get_imgS()))
-        self.sharpness_spin.setValue(int(self.raspiCamModel.get_imageSharpness()))
+        self.interval_spin.setValue(cam.get_intervalbild()) 
+        self.save_raw_checkbox.setChecked(cam.get_imgRaw())
+        self.normalize_checkbox.setChecked(cam.get_imgNorm())
+        self.gain_spin.setValue(cam.get_gain()) 
+        self.exposure_time_spin.setValue(cam.get_exposureTime()) 
+        self.brightness_spin.setValue(cam.get_imgB())
+        self.contrast_spin.setValue(int(cam.get_imgC()))
+        self.saturation_spin.setValue(int(cam.get_imgS()))
+        self.sharpness_spin.setValue(int(cam.get_imageSharpness()))
 
     def expandWidgets(self):
+        """Set the image label to expand and fill available space."""
         self.image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+    def changeCamera(self, index):
+        """Switch active camera and refresh UI widgets."""
+        self._active_index = index
+        self.camAdapter._active_index = index
+        self.resetTabWidgets()
+        # update name edit to reflect new camera's stored name
+        cam = self.camAdapter._cam_handles[self._active_index]
+        self.camera_name_edit.setText(cam.camera_config.get("name", f"Camera_{self._active_index}"))
+
+    def changeCameraName(self):
+        """Save edited camera name to config and persist.
+
+        Called when the QLineEdit editing finishes.
+        """
+        cam = self.camAdapter._cam_handles[self._active_index]
+        new_name = self.camera_name_edit.text().strip()
+        if new_name:
+            cam.camera_config["name"] = new_name
+            # Persist the entire shared configuration
+            configurationManager.storeToJson()
+        # keep UI in sync (in case of empty string fallback)
+        self.camera_name_edit.setText(cam.camera_config.get("name", f"Camera_{self._active_index}"))
+
+    def handleResolutionChanged(self, index):
+        """Update resolution percentage based on combo box selection."""
+        resolution_values = [10, 25, 50, 75, 100]
+        self._resolution_pct = resolution_values[index]
+
     def handleNormalizeCheckboxStateChanged(self):
-        self.raspiCamModel.set_imgNorm(self.normalize_checkbox.isChecked())
+        """Update the active camera's normalization setting based on checkbox state."""
+        self.camAdapter._cam_handles[self._active_index].set_imgNorm(self.normalize_checkbox.isChecked())
         
     def handleSaveRawCheckboxStateChanged(self):
-            self.raspiCamModel.set_imgRaw(self.save_raw_checkbox.isChecked())
+        """Update the active camera's raw image saving setting based on checkbox state."""
+        self.camAdapter._cam_handles[self._active_index].set_imgRaw(self.save_raw_checkbox.isChecked())
 
     def updateCalibCamImage(self):
-        if self.raspiCamModel.get_successINIT():
+        """Fetch and display the latest image from the active camera, applying current color space and settings."""
+        if self.camAdapter._cam_handles[self._active_index].get_successINIT():
+            cam = self.camAdapter._cam_handles[self._active_index]
             # get image height
             try:
                 imgH = round(float(self.image_height_input.text()),0)
@@ -189,6 +270,7 @@ class TabViewCalibCamRaspi(QWidget):
             try:
                 NimgW = round(self.aspect_ratio_spin.value()/10*640/480*NimgH, 0)
             except (TypeError,ValueError):
+                logger.warning("Preview error, setting to 640px")
                 NimgW = 640
             
             # get image brightness, contrast and saturation
@@ -207,18 +289,29 @@ class TabViewCalibCamRaspi(QWidget):
             intervalbild = self.interval_spin.value()
 
             #update settings of camera, if necessary
-            self.raspiCamModel.queryUpdateCamSettings(intervalbild, gain, exposure_time, NimgW, NimgH, NimgB, NimgC, NimgS, new_image_sharpness)
+            changed_settings = cam.queryUpdateCamSettings(intervalbild, gain, exposure_time, NimgW, NimgH, NimgB, NimgC, NimgS, new_image_sharpness)
+            if changed_settings:
+                # Apply to hardware via controller
+                self.camAdapter._controller.updateCamSettings(changed_settings)
 
             #get image
             image_format = self.color_space_combo.currentText()
-            image_updated, imgbytes = self.raspiCamModel.getLatestImage(image_format)
+
+            target_w = max(1, round(cam.getImageWidth() * self._resolution_pct / 100))
+            target_h = max(1, round(cam.getImageHeight() * self._resolution_pct / 100))
+            image_updated, imgbytes = cam.getLatestImage(image_format="PREVIEW",scale=[target_w,target_h])
 
             if image_updated:
-                # Create QPixmap instance
-                pixmap = QPixmap(self.raspiCamModel.getImageWidth(), self.raspiCamModel.getImageHeight())
+                # # Create QPixmap instance (use scaled dimensions)
 
-                # Put bytes of example.bmp into it
-                pixmap.loadFromData(imgbytes)
+                # pixmap = QPixmap(target_w, target_h)
+                # # Put bytes of example.bmp into it
+                # pixmap.loadFromData(imgbytes,image_format="RAW")
+                # # Update image by applying the pixmap to the label
+                # self.image_label.setPixmap(pixmap)
 
-                # Update image by applying the pixmap to the label
-                self.image_label.setPixmap(pixmap) 
+                h, w, ch = imgbytes.shape
+                bytes_per_line = ch * w
+                q_img = QImage(imgbytes.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+                # q_img = QImage(imgbytes.data, w, h, bytes_per_line, QImage.Format.Format_BGR888)
+                self.image_label.setPixmap(QPixmap.fromImage(q_img))
