@@ -30,7 +30,7 @@ Also many thanks to Rocco Naumann, responsible to assure the safety of all of ou
 This project has been partially financed by the Federal Ministry of Research, Technology and Space through two projects:
 - WIR! Recomine funding scheme, project "WIR!-rECOmine – Digitalisierung und modellprädiktive Regelung komplexer Aufbreitungsprozesse mittels Sensorfusion und KI-gestützter Auswertung (03WIR1919B)".
 - EGARoh-Verbundvorhaben funding scheme, project „STREAM - Strukturorientierte Entwicklung energieeffizienter Verfahren zur ressourcenschonenden Primärrohstoffgewinnung durch neue Aufbereitungs- und Modellierungsansätze, TP: Prozessoptimierung und Online-Bewertung durch Methoden des maschinellen Lernens und Soft-Sensoren“ (033R445C)
-- 
+
 # Reference
 If you use this open source project, please cite it in your work as:
 
