@@ -620,9 +620,8 @@ if __name__=="__main__":
     except Exception as e:
         logger.error(e)
         # Kill matching processes while explicitly excluding this script's PID
-        import subprocess
+        import subprocess,os
         cmd = f'pkill -f "python.*digiflot" --exclude {os.getpid()} && echo "DigiFlot stopped." || echo "No DigiFlot process found."'
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, executable='/bin/bash')
-        print(result.stdout.strip())
+        subprocess.run(cmd, shell=True, capture_output=True, text=True, executable='/bin/bash')
 
 
