@@ -28,7 +28,8 @@ dependencies = [
   "pillow",
   "opencv-python-headless",
   "pandas",
-  "picamera2; (platform_machine == 'armv7l' or platform_machine == 'aarch64')"
+  "picamera2; (platform_machine == 'armv7l' or platform_machine == 'aarch64')",
+  "tifffile"
 ]
 
 [tool.setuptools.packages.find]
