@@ -20,15 +20,17 @@ python -m digiflot.DigiFlot
 Please keep in mind that **we have no affiliation with the vendors suggested in there, and we do not receive any financial support from them**. Our objective with this list is to only simplify the system installation in your laboratory. 
 All pieces indicated there are alredy integrated in the DigiFlot system.
 
-# Acknowldgements
-This laboratory assistant has, so far, been programmed at the [Helmholtz Institute Freiberg for Resource Technology](https://hzdr.de/hif), by Lucas Pereira & Christian Schmidt. 
+# Acknowledgements
+This laboratory assistant has, so far, been programmed at the [Helmholtz Institute Freiberg for Resource Technology](https://hzdr.de/hif), by Lucas Pereira, Gabriel Hilgert, and Christian Schmidt. 
 
 The developers are extremely grateful to all test users who battled through the bugs of the preliminary versions, also providing much valuable feedback. To name a few: Borhane Ben Said, Ali Hassan, Gülce Öktem, Aliza Salces, and Klaus Sygusch.
 
 Also many thanks to Rocco Naumann, responsible to assure the safety of all of our sensors, always engineering the best connectors for the laboratory assistant.
 
-This project has been partially financed by the Federal Ministry of Research, Technology and Space through the WIR! Recomine funding scheme, project "WIR!-rECOmine – Digitalisierung und modellprädiktive Regelung komplexer Aufbreitungsprozesse mittels Sensorfusion und KI-gestützter Auswertung (03WIR1919B)". 
-
+This project has been partially financed by the Federal Ministry of Research, Technology and Space through two projects:
+- WIR! Recomine funding scheme, project "WIR!-rECOmine – Digitalisierung und modellprädiktive Regelung komplexer Aufbreitungsprozesse mittels Sensorfusion und KI-gestützter Auswertung (03WIR1919B)".
+- EGARoh-Verbundvorhaben funding scheme, project „STREAM - Strukturorientierte Entwicklung energieeffizienter Verfahren zur ressourcenschonenden Primärrohstoffgewinnung durch neue Aufbereitungs- und Modellierungsansätze, TP: Prozessoptimierung und Online-Bewertung durch Methoden des maschinellen Lernens und Soft-Sensoren“ (033R445C)
+- 
 # Reference
 If you use this open source project, please cite it in your work as:
 
