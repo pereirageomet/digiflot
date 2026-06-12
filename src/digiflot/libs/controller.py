@@ -297,7 +297,7 @@ class Controller():
             if self.taskModel.status == "RUNNING":
                 self.taskModel.dumpValue(dev_name, dev_handle.getMeasuredValue())
             
-            print(f"{dev_name} took {time.perf_counter() - start:.6f}s")        
+            # print(f"{dev_name} took {time.perf_counter() - start:.6f}s")        
             start = time.perf_counter()
 
 

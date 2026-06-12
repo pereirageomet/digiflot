@@ -41,7 +41,7 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
         :param doRaw: Whether to save raw TIFF version
         """
         bildname = SF + "/" + IN
-        # print(bildname)
+        print(bildname)
         if isinstance(image, np.ndarray):
             if fmt == "tiff":
                 if doRaw: # sem compressao
@@ -61,9 +61,11 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
                 else:
                     image_pil.save(bildname + '.' + fmt, format=fmt)
         else:
-            image.save(bildname + '.' + fmt, fmt)
             if doRaw:
                 image.save(bildname + '.tiff', 'tiff')
+            else:
+                image.save(bildname + '.' + fmt, fmt)
+
     try:
         saveImg(str(samplefolder), imgname, image, imgRaw)      
     except Exception as e:
