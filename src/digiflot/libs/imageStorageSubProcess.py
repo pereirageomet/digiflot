@@ -52,7 +52,7 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
             else:
                 image_pil = Image.fromarray(image)
                 if fmt == "jpg":
-                    image_pil.save(bildname + '.' + fmt, format=fmt, quality=95, optimize=True)
+                    image_pil.save(bildname + '.' + 'jpg', format='jpg', quality=95, optimize=True)
                 elif fmt == "webp":
                     image_pil.save(bildname + '.' + fmt, format=fmt, quality=95)
                 elif fmt == "png":
