@@ -64,8 +64,11 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
             image.save(bildname + '.' + fmt, fmt)
             if doRaw:
                 image.save(bildname + '.tiff', 'tiff')
-
-    saveImg(str(samplefolder), imgname, image, imgRaw)      
+    try:
+        saveImg(str(samplefolder), imgname, image, imgRaw)      
+    except Exception as e:
+        logger.error(imgname)
+        logger.error(e)
 
 def evaluateRequest(message_queue, has_finished):
     """Process control messages from the queue.
