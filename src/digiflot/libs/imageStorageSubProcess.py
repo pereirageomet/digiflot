@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import tifffile
-
+import os
 import time
 try:
     from PIL import Image
@@ -40,7 +40,7 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
         :param image: Image data to save
         :param doRaw: Whether to save raw TIFF version
         """
-        bildname = SF + "/" + IN
+        bildname = os.path.join(SF, IN)
         print(bildname)
         if isinstance(image, np.ndarray):
             if fmt == "tiff":
@@ -49,7 +49,6 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
                 else: #com compressao
                     tifffile.imwrite(f"{bildname}.tiff", image, compression="zstd") #! zstd REQUER O PACOTE IMAGECONDECAS: pip install imagecodecs
                     # tifffile.imwrite(f"{bildname}.tiff", image, compression="lzw") #! LZW - codec mais antigo
-
             else:
                 image_pil = Image.fromarray(image)
                 if fmt == "jpg":

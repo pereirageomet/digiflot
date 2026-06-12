@@ -65,7 +65,6 @@ class ImageStorage:
             dct: Dictionary with image metadata and settings
         """
         try:
-            print("pipi")
             with self._cam_handle.image_array.get_lock():
                 image = np.frombuffer(
                     self._cam_handle.image_array.get_obj(),
