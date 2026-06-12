@@ -34,14 +34,15 @@ class TabViewCalibCamDaheng(QWidget):
         self.image_label.setPixmap(QPixmap(''))
         imageCalibLayout.addWidget(self.image_label)
 
-        file_format_group = QGroupBox("Color space")
+        image_format_group = QGroupBox("Image Format")
         file_format_layout = QVBoxLayout()
         self.file_format_combo = QComboBox()
-        self.file_format_combo.addItems(["jpg", "png"])
+        self.file_format_combo.currentIndexChanged.connect(self.handleImageFormatChanged)
+        self.file_format_combo.addItems(["jpg", "webp", "tiff", "png"])
         self.file_format_combo.setCurrentText("png")
         file_format_layout.addWidget(self.file_format_combo)
-        file_format_group.setLayout(file_format_layout)
-        imageCalibLayout.addWidget(file_format_group)
+        image_format_group.setLayout(file_format_layout)
+        imageCalibLayout.addWidget(image_format_group)
         imageCalibLayout.addStretch()
         
         # Column for image settings
@@ -153,6 +154,9 @@ class TabViewCalibCamDaheng(QWidget):
         """Update the camera's raw image saving setting based on checkbox state."""
         self.dahengCamModel.set_imgRaw(self.save_raw_checkbox.isChecked())
 
+    def handleImageFormatChanged(self):
+        """Update camera image format based on dropdown selection."""
+        self.dahengCamModel.set_fmt(self.file_format_combo.currentText())
     def updateCalibCamImage(self):
         """Fetch and display the latest image from the Daheng camera, applying current settings."""
         if self.dahengCamModel.get_successINIT():

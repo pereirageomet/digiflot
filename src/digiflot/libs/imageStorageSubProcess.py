@@ -52,7 +52,14 @@ def storePicture(image, stagename, fmt, samplefolder, imgRaw, **kwargs):
 
             else:
                 image_pil = Image.fromarray(image)
-                image_pil.save(bildname + '.' + fmt, format=fmt)
+                if fmt == "jpg":
+                    image_pil.save(bildname + '.' + fmt, format=fmt, quality=95, optimize=True)
+                elif fmt == "webp":
+                    image_pil.save(bildname + '.' + fmt, format=fmt, quality=95)
+                elif fmt == "png":
+                    image_pil.save(bildname + '.' + fmt, format=fmt, compress_level=9)
+                else:
+                    image_pil.save(bildname + '.' + fmt, format=fmt)
         else:
             image.save(bildname + '.' + fmt, fmt)
             if doRaw:

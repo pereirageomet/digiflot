@@ -50,14 +50,14 @@ class TabViewCalibCamRaspi(QWidget):
         self.image_label.setPixmap(QPixmap(''))
         imageCalibLayout.addWidget(self.image_label)
 
-        color_space_group = QGroupBox("Color space")
+        image_format_group = QGroupBox("Image Format")
         color_space_layout = QVBoxLayout()
-        self.color_space_combo = QComboBox()
-        self.color_space_combo.addItems(["GRAY", "HSV", "RGB"])
-        self.color_space_combo.setCurrentText("RGB")
-        color_space_layout.addWidget(self.color_space_combo)
-        color_space_group.setLayout(color_space_layout)
-        imageCalibLayout.addWidget(color_space_group)
+        self.image_format_combo = QComboBox()
+        self.image_format_combo.addItems(["jpg", "webp", "tiff", "png"])
+        self.image_format_combo.setCurrentText("jpg")
+        color_space_layout.addWidget(self.image_format_combo)
+        image_format_group.setLayout(color_space_layout)
+        imageCalibLayout.addWidget(image_format_group)
         
         resolution_group = QGroupBox("Camera Resolution")
         resolution_layout = QVBoxLayout()
@@ -66,6 +66,7 @@ class TabViewCalibCamRaspi(QWidget):
         self.resolution_combo.setCurrentIndex(1)
         self._resolution_pct = 33
         self.resolution_combo.currentIndexChanged.connect(self.handleResolutionChanged)
+        self.image_format_combo.currentIndexChanged.connect(self.handleImageFormatChanged)
         resolution_layout.addWidget(self.resolution_combo)
         resolution_group.setLayout(resolution_layout)
         imageCalibLayout.addWidget(resolution_group)
@@ -194,6 +195,8 @@ class TabViewCalibCamRaspi(QWidget):
         self.setLayout(mainLayout)
 
     def resetTabWidgets(self):
+        # sync image format dropdown
+        self.image_format_combo.setCurrentText(self.camAdapter._cam_handles[self._active_index].camera_config.get("image format", "jpg"))
         """Reset UI widgets and keep camera name in sync."""
         cam = self.camAdapter._cam_handles[self._active_index]
         # synchronize name edit
@@ -244,6 +247,10 @@ class TabViewCalibCamRaspi(QWidget):
         self._resolution_pct = resolution_values[index]
 
     def handleNormalizeCheckboxStateChanged(self):
+        """Update camera normalization setting."""
+    def handleImageFormatChanged(self):
+        """Update camera image format based on dropdown selection."""
+        self.camAdapter._cam_handles[self._active_index].set_fmt(self.image_format_combo.currentText())
         """Update the active camera's normalization setting based on checkbox state."""
         self.camAdapter._cam_handles[self._active_index].set_imgNorm(self.normalize_checkbox.isChecked())
         
@@ -295,7 +302,7 @@ class TabViewCalibCamRaspi(QWidget):
                 self.camAdapter._controller.updateCamSettings(changed_settings)
 
             #get image
-            image_format = self.color_space_combo.currentText()
+            image_format = self.image_format_combo.currentText()
 
             target_w = max(1, round(cam.getImageWidth() * self._resolution_pct / 100))
             target_h = max(1, round(cam.getImageHeight() * self._resolution_pct / 100))
